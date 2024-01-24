@@ -27,7 +27,7 @@ namespace Transformation
 
     public:
         Map2Sphere(unsigned int mapWidth, unsigned int mapHeight, double fov)
-            : SphereR{sqrt((mapWidth) + Squared(mapHeight)) * (2 * PI) / fov},
+            : SphereR{sqrt(Squared(mapWidth) + Squared(mapHeight)) * fov / (2.0 * PI)},
               MapWidth{(double)mapWidth},
               MapHeight{(double)mapHeight}
         {

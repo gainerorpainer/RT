@@ -28,13 +28,13 @@ int main()
             Vec3d_t const rayDirection = cameraTransformation.Transform(x, y);
 
             // see if ray intersects any object
-            for (auto const &object : Scene::Objects)
+            for (Shapes::Shape const * const object : Scene::Objects)
             {
-                if(!object.IsIntersecting(std::make_tuple(Camera::Origin, rayDirection)))
+                if(!object->IsIntersecting(std::make_tuple(Camera::Origin, rayDirection)))
                     continue;
 
                 // paint pixel with object color
-                std::copy(object.Color.begin(), object.Color.end(), bitmap.at(x, y));
+                std::copy(object->Color.begin(), object->Color.end(), bitmap.at(x, y));
             }
         }
     }

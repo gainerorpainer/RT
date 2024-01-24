@@ -2,8 +2,8 @@
 
 namespace Bitmap
 {
-    constexpr unsigned int BITMAP_WIDTH = 100;
-    constexpr unsigned int BITMAP_HEIGHT = 100;
+    constexpr unsigned int BITMAP_WIDTH = 400;
+    constexpr unsigned int BITMAP_HEIGHT = 200;
 
     struct Bitmap
     {
