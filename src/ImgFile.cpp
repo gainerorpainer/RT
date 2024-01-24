@@ -23,7 +23,7 @@ namespace ImgFile
             for (size_t y = 0; y < height; y++)
             {
                 for (size_t i = 0; i < 3; i++)
-                    fputc(rgbData[y * width + x][i], imageFile);
+                    fputc(rgbData[y + x * height][i], imageFile);
             }
         }
 

@@ -21,13 +21,15 @@ namespace Transformation
     class Map2Sphere
     {
     private:
-        double const SphereR;
+        double const LongitudeStep;
+        double const LatitudeStep;
         double const MapWidth;
         double const MapHeight;
 
     public:
         Map2Sphere(unsigned int mapWidth, unsigned int mapHeight, double fov)
-            : SphereR{sqrt(Squared(mapWidth) + Squared(mapHeight)) * fov / (2.0 * PI)},
+            : LongitudeStep{fov / mapWidth},
+              LatitudeStep{fov / mapHeight},
               MapWidth{(double)mapWidth},
               MapHeight{(double)mapHeight}
         {
@@ -37,10 +39,10 @@ namespace Transformation
         /// @param x map x coord
         /// @param y map y coord
         /// @return The resulting vector pointing to the sphere point with length 1
-        Vec3d_t Transform(double x, double y) const
+        Vec3d_t Transform(unsigned int x, unsigned int y) const
         {
-            double const longitude = (x - MapWidth / 2.0) / SphereR;
-            double const latitude = 2.0 * atan(exp((y - MapHeight / 2.0) / SphereR)) - PI / 2.0;
+            double const longitude = (x - MapWidth / 2) * LongitudeStep;
+            double const latitude = (y - MapHeight / 2) * LongitudeStep;
 
             return Vec3d_t{cos(latitude) * cos(longitude), cos(latitude) * sin(longitude), sin(latitude)};
         }
