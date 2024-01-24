@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Types.h"
+#include "Primitives.h"
 
-using namespace Types;
+using namespace Primitives;
 
 namespace Camera
 {
-    constexpr Vec3d_t Origin = {0, 0, 0};
-    constexpr Vec3d_t Pointing = {1, 0, 0};
-    constexpr double FOV = Deg2Rad(90); 
+    Vec3d const Origin{0, 0, 0};
+    Vec3d const Pointing{1, 0, 0};
+    double const FOV = Deg2Rad(90);
 }

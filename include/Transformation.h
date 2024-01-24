@@ -3,9 +3,9 @@
 #include <array>
 #include <math.h>
 
-#include "Types.h"
+#include "Primitives.h"
 
-using namespace Types;
+using namespace Primitives;
 
 namespace Transformation
 {
@@ -39,12 +39,12 @@ namespace Transformation
         /// @param x map x coord
         /// @param y map y coord
         /// @return The resulting vector pointing to the sphere point with length 1
-        Vec3d_t Transform(unsigned int x, unsigned int y) const
+        Vec3d Transform(unsigned int x, unsigned int y) const
         {
             double const longitude = (x - MapWidth / 2) * LongitudeStep;
             double const latitude = (y - MapHeight / 2) * LongitudeStep;
 
-            return Vec3d_t{cos(latitude) * cos(longitude), cos(latitude) * sin(longitude), sin(latitude)};
+            return Vec3d{cos(latitude) * cos(longitude), cos(latitude) * sin(longitude), sin(latitude)};
         }
     };
 }

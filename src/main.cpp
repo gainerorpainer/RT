@@ -1,7 +1,5 @@
 #include <iostream>
 
-#include "Types.h"
-
 #include "Bitmap.h"
 #include "Camera.h"
 #include "Scene.h"
@@ -9,8 +7,6 @@
 #include "Transformation.h"
 
 #include "ImgFile.h"
-
-using namespace Types;
 
 int main()
 {
@@ -25,16 +21,16 @@ int main()
         for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
         {
             // calc ray vector by mapping 2d to sphere coords
-            Vec3d_t const rayDirection = cameraTransformation.Transform(x, y);
+            Vec3d const rayDirection = cameraTransformation.Transform(x, y);
 
             // see if ray intersects any object
-            for (Shapes::Shape const * const object : Scene::Objects)
+            for (Shapes::Shape const *const object : Scene::Objects)
             {
-                if(!object->IsIntersecting(std::make_tuple(Camera::Origin, rayDirection)))
+                if (!object->IsIntersecting(Line{Camera::Origin, rayDirection}))
                     continue;
 
                 // paint pixel with object color
-                std::copy(object->Color.begin(), object->Color.end(), bitmap.at(x, y));
+                std::copy(object->Emission.begin(), object->Emission.end(), bitmap.at(x, y));
             }
         }
     }

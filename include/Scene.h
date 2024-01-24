@@ -2,12 +2,10 @@
 
 #include <array>
 
-#include "Types.h"
 #include <Shapes.h>
 
 namespace Scene
 {
-    using namespace Types;
     using namespace Shapes;
 
     std::array<Shape *, 2> Objects = {

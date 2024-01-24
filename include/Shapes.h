@@ -1,50 +1,48 @@
 #pragma once
 
-#include <Types.h>
+#include "Primitives.h"
 
 namespace Shapes
 {
-    using namespace Types;
+    using namespace Primitives;
 
     class Shape
     {
     public:
-        virtual bool IsIntersecting(Line_t const &line) const = 0;
-        Color_t const Color;
+        virtual bool IsIntersecting(Line const &line) const = 0;
+        Color_t const Emission;
 
     protected:
-        Shape(Color_t color) : Color{color}
+        Shape(Color_t color) : Emission{color}
         {
         }
     };
 
     struct Sphere : public Shape
     {
-        Vec3d_t const Centerpoint;
+        Vec3d const Centerpoint;
         double const Radius;
 
-        Sphere(Color_t color, Vec3d_t center, double radius)
-            : Shape(color), Centerpoint{center}, Radius{radius}
+        Sphere(Color_t emission, Vec3d center, double radius)
+            : Shape(emission), Centerpoint{center}, Radius{radius}
         {
         }
 
-        bool IsIntersecting(Line_t const &line) const override
+        bool IsIntersecting(Line const &line) const override
         {
             // http://www.codeproject.com/Articles/19799/Simple-Ray-Tracing-in-C-Part-II-Triangles-Intersec
 
-            double const cx = Centerpoint[0];
-            double const cy = Centerpoint[1];
-            double const cz = Centerpoint[2];
+            double const cx = Centerpoint.X;
+            double const cy = Centerpoint.Y;
+            double const cz = Centerpoint.Z;
 
-            auto const &lineOrigin = std::get<0>(line);
-            double const px = lineOrigin[0];
-            double const py = lineOrigin[1];
-            double const pz = lineOrigin[2];
+            double const px = line.Origin.X;
+            double const py = line.Origin.Y;
+            double const pz = line.Origin.Z;
 
-            auto const &lineDirection = std::get<1>(line);
-            double const vx = lineDirection[0] - px;
-            double const vy = lineDirection[1] - py;
-            double const vz = lineDirection[2] - pz;
+            double const vx = line.Direction.X - px;
+            double const vy = line.Direction.Y - py;
+            double const vz = line.Direction.Z - pz;
 
             double const A = vx * vx + vy * vy + vz * vz;
             double const B = 2.0 * (px * vx + py * vy + pz * vz - vx * cx - vy * cy - vz * cz);
@@ -86,4 +84,25 @@ namespace Shapes
         }
     };
 
+    struct Plane : public Shape
+    {
+        Vec3d const Pin;
+        Vec3d const Normal;
+        Plane(Color_t emission, Vec3d pin, Vec3d planeNormal)
+            : Shape(emission), Pin{pin}, Normal{planeNormal}
+        {
+        }
+
+        bool IsIntersecting(Line const &line) const override
+        {
+            double const numerator = (Pin - line.Origin) * Normal;
+            double const denominator = line.Direction * Normal;
+            if (denominator == 0)
+                // parallel, maybe within plane?
+                return numerator == 0;
+            
+            // check numerator / denominator = distance > 0
+            return (numerator / denominator) > 0;
+        }
+    };
 }
