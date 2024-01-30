@@ -15,6 +15,11 @@ namespace Shapes
         Line Reflection;
     };
 
+    bool AlmostSame(double a, double b)
+    {
+        return abs(a - b) <= 1e-10;
+    }
+
     class Shape
     {
     public:
@@ -30,7 +35,7 @@ namespace Shapes
         {
             // https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
             Vec3d const reflectionDirection = direction - 2.0 * (direction * normal) * normal;
-            assert(reflectionDirection.GetNorm() == 1.0);
+            assert(AlmostSame(reflectionDirection.GetNorm(), 1.0));
 
             return reflectionDirection;
         }
@@ -48,7 +53,7 @@ namespace Shapes
 
         std::optional<HitEvent> CheckHit(Line const &line) const override
         {
-            assert(line.Direction.GetNorm() == 1.0);
+            assert(AlmostSame(line.Direction.GetNorm(), 1.0));
 
             // https://gamedev.stackexchange.com/a/96487
 
@@ -114,7 +119,7 @@ namespace Shapes
 
             // Calc reflection ray
             Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
-            Vec3d const reflectionPoint = line.Origin + distance * line.Direction; 
+            Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
             return HitEvent{distance, Line{reflectionPoint, reflectionDirection}};
         }
     };

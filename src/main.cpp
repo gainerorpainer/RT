@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <vector>
 
 #include "Bitmap.h"
 #include "Camera.h"
@@ -9,26 +10,16 @@
 
 #include "ImgFile.h"
 
+bool custom_compar(std::pair<Shapes::Shape *, Shapes::HitEvent> const &a, std::pair<Shapes::Shape *, Shapes::HitEvent> const &b)
+{
+    return true;
+}
+
 int main()
 {
     std::cout << "Hello World" << std::endl;
 
     Bitmap::Bitmap bitmap = {0};
-
-    // apply z-index w/ respect to camera
-    auto asSorted = [](auto const & array, auto isFirstFunc) { 
-        auto copy{array};
-        std::sort(copy.begin(), copy.end(), isFirstFunc);
-    };
-    auto getDistanceToCam = [](Shapes::Shape const & shape) 
-    {
-        return shape.Center;
-    };
-    auto isCloser = [](Shapes::Shape const & first, Shapes::Shape const & second)
-    {
-        return 
-    };
-    std::array<Shapes::Shape *, Scene::Objects.size()> const sortedObjects = asSorted(Scene::Objects, nullptr);
 
     // Camera rays
     Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
@@ -37,19 +28,33 @@ int main()
         for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
         {
             // calc ray vector by mapping 2d to sphere coords
-             Vec3d const rayDirection = cameraTransformation.Transform(x, y);
+            Vec3d const rayDirection = cameraTransformation.Transform(x, y);
 
             // see if ray intersects any object
-            std::array<std::optional<Shapes::HitEvent>, Scene::Objects.size()> hits;
-            for (Shapes::Shape const *const object : Scene::Objects)
+            std::vector<std::pair<Shapes::Shape *, Shapes::HitEvent>> hits;
+            for (unsigned int i = 0; i < Scene::Objects.size(); i++)
             {
-                auto const hitevent = object->CheckHit(Line{Camera::Origin, rayDirection});
+                Shapes::Shape *shape = Scene::Objects[i];
+                auto hitevent = shape->CheckHit(Line{Camera::Origin, rayDirection});
                 if (!hitevent)
                     continue;
 
-                // paint pixel with object color
-                std::copy(object->Emission.begin(), object->Emission.end(), bitmap.at(x, y));
+                hits.push_back(std::make_pair(shape, hitevent.value()));
             }
+
+            if (hits.size() == 0)
+                continue;
+
+            // find element with shortest distance
+            std::pair<Shapes::Shape *, double> nearest = std::make_pair(hits.front().first, hits.front().second.Distance);
+            for (auto it = std::next(hits.begin()); it != hits.end(); it++)
+            {
+                if (it->second.Distance >= nearest.second)
+                    continue;
+                nearest = std::make_pair(it->first, it->second.Distance);
+            }
+            // paint pixel with object color
+            std::copy(nearest.first->Emission.begin(), nearest.first->Emission.end(), bitmap.at(x, y));
         }
     }
 

@@ -31,8 +31,12 @@ while True:
             continue
 
         now = time.time()
-        returncode = subprocess.Popen(
-            temp_exe, cwd=os.getcwd() + "\\..").wait()
+        try:
+            returncode = subprocess.Popen(
+                temp_exe, cwd=os.getcwd() + "\\..").wait()
+        except OSError:
+            print("Exe not runnable")
+            continue
         if returncode != 0:
             print("Exe failed")
             continue
