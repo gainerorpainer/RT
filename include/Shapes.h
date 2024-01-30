@@ -1,15 +1,22 @@
 #pragma once
 
 #include "Primitives.h"
+#include <optional>
 
 namespace Shapes
 {
     using namespace Primitives;
 
+    struct HitEvent
+    {
+        double Distance;
+        Vec3d ReflectionDirection;
+    };
+
     class Shape
     {
     public:
-        virtual bool IsIntersecting(Line const &line) const = 0;
+        virtual std::optional<HitEvent> CheckHit(Line const &line) const = 0;
         Color_t const Emission;
 
     protected:
@@ -28,7 +35,7 @@ namespace Shapes
         {
         }
 
-        bool IsIntersecting(Line const &line) const override
+        std::optional<HitEvent> IsIntersecting(Line const &line) const override
         {
             // http://www.codeproject.com/Articles/19799/Simple-Ray-Tracing-in-C-Part-II-Triangles-Intersec
 
@@ -54,33 +61,14 @@ namespace Shapes
 
             if (D < 0)
             {
-                return false;
+                return std::nullopt;
             }
-            return true;
 
-            // double t1 = (-B - Math.Sqrt(D)) / (2.0 * A);
-
-            // Point3D solution1 = new Point3D(linePoint0.X * (1 - t1) + t1 * linePoint1.X,
-            //                                 linePoint0.Y * (1 - t1) + t1 * linePoint1.Y,
-            //                                 linePoint0.Z * (1 - t1) + t1 * linePoint1.Z);
-            // if (D == 0)
-            // {
-            //     return new Point3D[]{solution1};
-            // }
-
-            // double t2 = (-B + Math.Sqrt(D)) / (2.0 * A);
-            // Point3D solution2 = new Point3D(linePoint0.X * (1 - t2) + t2 * linePoint1.X,
-            //                                 linePoint0.Y * (1 - t2) + t2 * linePoint1.Y,
-            //                                 linePoint0.Z * (1 - t2) + t2 * linePoint1.Z);
-
-            // // prefer a solution that's on the line segment itself
-
-            // if (Math.Abs(t1 - 0.5) < Math.Abs(t2 - 0.5))
-            // {
-            //     return new Point3D[]{solution1, solution2};
-            // }
-
-            // return new Point3D[]{solution2, solution1};
+            double const t = (-B - sqrt(D)) / (2.0 * A);
+            Vec3d const solution = Vec3d(line.Origin.X * (1 - t) + t * line.Origin.X,
+                                    line.Origin.Y * (1 - t) + t * line.Origin.Y,
+                                    line.Origin.Z * (1 - t) + t * line.Origin.Z);
+            return HitEvent{t, solution};
         }
     };
 
@@ -100,7 +88,7 @@ namespace Shapes
             if (denominator == 0)
                 // parallel, maybe within plane?
                 return numerator == 0;
-            
+
             // check numerator / denominator = distance > 0
             return (numerator / denominator) > 0;
         }

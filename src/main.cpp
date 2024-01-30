@@ -21,8 +21,8 @@ int main()
         for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
         {
             // calc ray vector by mapping 2d to sphere coords
-            Vec3d const rayDirection = cameraTransformation.Transform(x, y);
-
+             Vec3d const rayDirection = cameraTransformation.Transform(x, y);
+             
             // see if ray intersects any object
             for (Shapes::Shape const *const object : Scene::Objects)
             {
@@ -35,12 +35,7 @@ int main()
         }
     }
 
-    // // draw random stuff
-    // for (size_t i = 0; i < std::min(Bitmap::BITMAP_HEIGHT, Bitmap::BITMAP_WIDTH); i++)
-    //     for (size_t j = 0; j < 3; j++)
-    //         bitmap.at(i, i)[j] = 100;
-
-    ImgFile::writeNetPbm("render\\test.ppm", Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, bitmap.Pixels);
+    ImgFile::writeNetPbm("Render\\output.ppm", Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, bitmap.Pixels);
 
     return 0;
 }
