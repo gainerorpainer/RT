@@ -36,15 +36,29 @@ namespace Primitives
 
         /// @brief Default Ctor
         Vec3d()
-        : Vec3d{0, 0, 0}
+            : Vec3d{0, 0, 0}
         {
         }
 
         /// @brief Copy Ctor
         /// @param other from other instance
         Vec3d(Vec3d const &other)
-        : Vec3d{other.Vector}
+            : Vec3d{other.Vector}
         {
+        }
+
+        /// @brief Compute norm (length) of vector
+        /// @return The norm (length)
+        double GetNorm() const
+        {
+            return sqrt(X * X + Y * Y + Z * Z);
+        }
+
+        /// @brief Compute normalized version of this vector
+        /// @return This vector scaled to length 1
+        Vec3d ToNormalized() const
+        {
+            return *this * (1.0 / GetNorm());
         }
 
         /// @brief DOTPRODUCT
@@ -57,17 +71,50 @@ namespace Primitives
                    Vector[2] * righthand.Vector[2];
         }
 
+        /// @brief Scalar multiply
+        /// @param righthand scalar
+        /// @return Scaled vector
+        Vec3d operator*(const double righthand) const
+        {
+            return Vec3d{X * righthand, Y * righthand, Z * righthand};
+        }
+
+        /// @brief PLUS
+        /// @param righthand
+        /// @return Elementwise plus
+        Vec3d operator+(const Vec3d &righthand) const
+        {
+            return Vec3d{X + righthand.X,
+                         Y + righthand.Y,
+                         Z + righthand.Z};
+        }
+
+        /// @brief Inversion
+        /// @return negative vector
+        Vec3d operator-() const
+        {
+            return Vec3d{-X, -Y, -Z};
+        }
+
         /// @brief MINUS
         /// @param righthand
         /// @return Elementwise minus
         Vec3d
         operator-(const Vec3d &righthand) const
         {
-            return Vec3d{Vector[0] - righthand.Vector[0],
-                         Vector[1] - righthand.Vector[1],
-                         Vector[2] - righthand.Vector[2]};
+            return *this + (-righthand);
         }
     };
+
+    /// @brief Scalar multiplication (lefthanded)
+    /// @param lefthand scalar
+    /// @param righthand vector
+    /// @return scaled vector
+    Vec3d operator*(double lefthand, const Vec3d &righthand)
+    {
+        // commutative law
+        return righthand * lefthand;
+    }
 
     struct Line
     {

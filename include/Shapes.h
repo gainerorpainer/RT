@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Primitives.h"
 #include <optional>
+#include <cassert>
+
+#include "Primitives.h"
 
 namespace Shapes
 {
@@ -10,7 +12,7 @@ namespace Shapes
     struct HitEvent
     {
         double Distance;
-        Vec3d ReflectionDirection;
+        Line Reflection;
     };
 
     class Shape
@@ -22,6 +24,15 @@ namespace Shapes
     protected:
         Shape(Color_t color) : Emission{color}
         {
+        }
+
+        static Vec3d Reflect(Vec3d const &direction, Vec3d const &normal)
+        {
+            // https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
+            Vec3d const reflectionDirection = direction - 2.0 * (direction * normal) * normal;
+            assert(reflectionDirection.GetNorm() == 1.0);
+
+            return reflectionDirection;
         }
     };
 
@@ -35,40 +46,41 @@ namespace Shapes
         {
         }
 
-        std::optional<HitEvent> IsIntersecting(Line const &line) const override
+        std::optional<HitEvent> CheckHit(Line const &line) const override
         {
-            // http://www.codeproject.com/Articles/19799/Simple-Ray-Tracing-in-C-Part-II-Triangles-Intersec
+            assert(line.Direction.GetNorm() == 1.0);
 
-            double const cx = Centerpoint.X;
-            double const cy = Centerpoint.Y;
-            double const cz = Centerpoint.Z;
+            // https://gamedev.stackexchange.com/a/96487
 
-            double const px = line.Origin.X;
-            double const py = line.Origin.Y;
-            double const pz = line.Origin.Z;
+            Vec3d const connectionLine = line.Origin - Centerpoint;
+            double const b = connectionLine * line.Direction;
+            double const c = connectionLine * connectionLine - Radius * Radius;
 
-            double const vx = line.Direction.X - px;
-            double const vy = line.Direction.Y - py;
-            double const vz = line.Direction.Z - pz;
-
-            double const A = vx * vx + vy * vy + vz * vz;
-            double const B = 2.0 * (px * vx + py * vy + pz * vz - vx * cx - vy * cy - vz * cz);
-            double const C = px * px - 2 * px * cx + cx * cx + py * py - 2 * py * cy + cy * cy +
-                             pz * pz - 2 * pz * cz + cz * cz - Radius * Radius;
-
-            // discriminant
-            double const D = B * B - 4 * A * C;
-
-            if (D < 0)
-            {
+            // ray is outside of sphere and pointing away from sphere
+            if (c > 0 && b > 0)
                 return std::nullopt;
-            }
 
-            double const t = (-B - sqrt(D)) / (2.0 * A);
-            Vec3d const solution = Vec3d(line.Origin.X * (1 - t) + t * line.Origin.X,
-                                    line.Origin.Y * (1 - t) + t * line.Origin.Y,
-                                    line.Origin.Z * (1 - t) + t * line.Origin.Z);
-            return HitEvent{t, solution};
+            double const discriminant = b * b - c;
+
+            // no intersection
+            if (discriminant < 0)
+                return std::nullopt;
+
+            // calc parameter t on r = line.Origin + line.Direction * t
+            double const distance = -b - sqrt(discriminant);
+
+            if (distance < 0)
+                // inside sphere, bad
+                exit(-1);
+
+            // intersection point
+            Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
+
+            // calc intersection normal
+            Vec3d const normal = (intersectionPoint - Centerpoint).ToNormalized();
+            Vec3d const reflectionDirection = Reflect(line.Direction, normal);
+
+            return HitEvent{distance, Line{intersectionPoint, reflectionDirection}};
         }
     };
 
@@ -81,16 +93,29 @@ namespace Shapes
         {
         }
 
-        bool IsIntersecting(Line const &line) const override
+        std::optional<HitEvent> CheckHit(Line const &line) const
         {
             double const numerator = (Pin - line.Origin) * Normal;
             double const denominator = line.Direction * Normal;
+            // parallel
             if (denominator == 0)
-                // parallel, maybe within plane?
-                return numerator == 0;
+            {
+                // line is within plane, bad
+                if (numerator == 0)
+                    exit(-1);
+
+                return std::nullopt;
+            }
 
             // check numerator / denominator = distance > 0
-            return (numerator / denominator) > 0;
+            double const distance = numerator / denominator;
+            if (distance < 0)
+                return std::nullopt;
+
+            // Calc reflection ray
+            Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
+            Vec3d const reflectionPoint = line.Origin + distance * line.Direction; 
+            return HitEvent{distance, Line{reflectionPoint, reflectionDirection}};
         }
     };
 }

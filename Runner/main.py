@@ -1,34 +1,46 @@
 import time
 import os
 import subprocess
+import tempfile, shutil
 
 import cv2
 
-imgpath = "..\\Render\\output.ppm"
-exepath = "..\\main.exe"
+IMGPATH = "..\\Render\\output.ppm"
+EXEPATH = "..\\main.exe"
+WINDOWNAME = "Output"
+WINDOW_SIZE = (200, 100)
 
 last_modified = 0
 
+cv2.namedWindow(WINDOWNAME)
+cv2.setWindowProperty(WINDOWNAME, cv2.WND_PROP_TOPMOST, 1)
+
 while True:
-    modified = os.stat(exepath).st_mtime
+    modified = os.stat(EXEPATH).st_mtime if os.path.exists(EXEPATH) else 0
     if modified != last_modified:
         last_modified = modified
         print("Modified, re-running exe...")
 
-        now = time.time()
+        temp_dir = tempfile.gettempdir()
+        temp_exe = os.path.join(temp_dir, "main.exe")
         try:
-            returncode = subprocess.Popen(exepath, cwd=os.getcwd() + "\\..").wait()
+            shutil.copy2(EXEPATH, temp_exe)
         except PermissionError:
             "File locked..."
             time.sleep(0.25)
             continue
+
+        now = time.time()
+        returncode = subprocess.Popen(
+            temp_exe, cwd=os.getcwd() + "\\..").wait()
         if returncode != 0:
             print("Exe failed")
             continue
-
         print(f"Runtime: {1000 * (time.time() - now):0.1f}ms")
-        image = cv2.imread(imgpath)
-        cv2.imshow("Output", image)
+        
+        image = cv2.imread(IMGPATH)
+        image = cv2.resize(image, WINDOW_SIZE, interpolation=cv2.INTER_LINEAR)
+        cv2.imshow(WINDOWNAME, image)
 
     time.sleep(0.25)
     cv2.pollKey()
