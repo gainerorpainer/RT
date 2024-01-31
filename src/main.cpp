@@ -10,6 +10,8 @@
 
 #include "ImgFile.h"
 
+constexpr unsigned int ITERATIONS = 5;
+
 Bitmap::Bitmap RT()
 {
     Bitmap::Bitmap bitmap = {0};
@@ -20,40 +22,64 @@ Bitmap::Bitmap RT()
     {
         for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
         {
-            for (size_t iteration = 0; iteration < 5; iteration++)
+            // first ray comes from cam
+            Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
+
+            ColorD_t colorFilters = {1, 1, 1};
+            Color_t lightsource = {0, 0, 0};
+            for (size_t iteration = 0; iteration < ITERATIONS; iteration++)
             {
-                /* code */
+                // see if ray intersects any object
+                std::vector<std::pair<Shapes::Shape *, Shapes::HitEvent>> hits;
+                for (unsigned int i = 0; i < Scene::Objects.size(); i++)
+                {
+                    Shapes::Shape *shape = Scene::Objects[i];
+                    auto hitevent = shape->CheckHit(ray);
+                    if (!hitevent)
+                        continue;
+
+                    hits.push_back(std::make_pair(shape, hitevent.value()));
+                }
+
+                if (hits.size() == 0)
+                    // nothing hit
+                    break;
+
+                // find element with shortest distance
+                double shortestDistance = INFINITY;
+                decltype(hits)::iterator nearest;
+                for (auto it = hits.begin(); it != hits.end(); it++)
+                {
+                    if (it->second.Distance >= shortestDistance)
+                        continue;
+
+                    shortestDistance = it->second.Distance;
+                    nearest = it;
+                }
+
+                // apply material and new ray(s)
+                Shapes::MaterialInfo const &material = nearest->first->Material;
+                ray = nearest->second.Reflection;
+
+                if (material.IsLightsource)
+                {
+                    lightsource = material.Emission;
+                    break;
+                }
+                else
+                {
+                    // apply color filter
+                    colorFilters = colorFilters.MultiplyElementwise(material.TransferFunction);
+                }
             }
-            
-            // calc ray vector by mapping 2d to sphere coords
-            Vec3d const rayDirection = cameraTransformation.Transform(x, y);
 
-            // see if ray intersects any object
-            std::vector<std::pair<Shapes::Shape *, Shapes::HitEvent>> hits;
-            for (unsigned int i = 0; i < Scene::Objects.size(); i++)
-            {
-                Shapes::Shape *shape = Scene::Objects[i];
-                auto hitevent = shape->CheckHit(Line{Camera::Origin, rayDirection});
-                if (!hitevent)
-                    continue;
-
-                hits.push_back(std::make_pair(shape, hitevent.value()));
-            }
-
-            if (hits.size() == 0)
-                continue;
-
-            // find element with shortest distance
-            std::pair<Shapes::Shape *, double> nearest = std::make_pair(hits.front().first, hits.front().second.Distance);
-            for (auto it = std::next(hits.begin()); it != hits.end(); it++)
-            {
-                if (it->second.Distance >= nearest.second)
-                    continue;
-                nearest = std::make_pair(it->first, it->second.Distance);
-            }
+            // calculate light physics
+            Color_t pixelcolor;
+            for (unsigned int i = 0; i < 3; i++)
+                pixelcolor[i] = (uint8_t)((double)lightsource[i] * colorFilters.Data[i]);
 
             // paint pixel with object color
-            std::copy(nearest.first->Emission.begin(), nearest.first->Emission.end(), bitmap.at(x, y));
+            std::copy(pixelcolor.begin(), pixelcolor.end(), bitmap.at(x, y));
         }
     }
 

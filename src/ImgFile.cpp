@@ -19,7 +19,7 @@ namespace ImgFile
         fprintf(imageFile, "255\n");                  // pixeldepth
 
         // upside down
-        for (size_t y = height; y != (size_t)-1; y--)
+        for (size_t y = height - 1; y != (size_t)-1; y--)
         {
             for (size_t x = 0; x < width; x++)
             {

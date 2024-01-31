@@ -21,15 +21,34 @@ namespace Shapes
         return abs(a - b) <= 1e-10;
     }
 
+    struct MaterialInfo
+    {
+        bool IsLightsource;
+        Color_t Emission;
+        ColorD_t TransferFunction;
+
+        static MaterialInfo MakeAbsorbing(Color_t const &visibleColor)
+        {
+            ColorD_t const filter = {(double)visibleColor[0] / 255.0, (double)visibleColor[1] / 255.0, (double)visibleColor[2] / 255.0};
+            return MaterialInfo{.IsLightsource = false, .Emission = {}, .TransferFunction = filter};
+        }
+
+        static MaterialInfo MakeEmitting(Color_t const &emission)
+        {
+            return MaterialInfo{.IsLightsource = true, .Emission = emission, .TransferFunction = {}};
+        }
+    };
+
     class Shape
     {
     public:
-        virtual std::optional<HitEvent> CheckHit(Line const &line) const = 0;
-        Color_t const Emission;
         std::string const Label;
+        MaterialInfo const Material;
+
+        virtual std::optional<HitEvent> CheckHit(Line const &line) const = 0;
 
     protected:
-        Shape(std::string const &label, Color_t color) : Emission{color}, Label{label}
+        Shape(std::string const &label, MaterialInfo const &material) : Label{label}, Material{material}
         {
         }
 
@@ -48,8 +67,8 @@ namespace Shapes
         Vec3d const Centerpoint;
         double const Radius;
 
-        Sphere(std::string const &label, Color_t emission, Vec3d center, double radius)
-            : Shape(label, emission), Centerpoint{center}, Radius{radius}
+        Sphere(std::string const &label, MaterialInfo const &material, Vec3d center, double radius)
+            : Shape(label, material), Centerpoint{center}, Radius{radius}
         {
         }
 
@@ -77,7 +96,9 @@ namespace Shapes
             double const distance = abs(-b - sqrt(discriminant));
 
             // intersection point
-            Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
+            // offset a little from hitpoint to avoid collision with this shape on next iteration
+            // (this should not be done if collision is disabled for this shape on next iteration)
+            Vec3d const intersectionPoint = line.Origin + (distance - 0.001) * line.Direction;
 
             // calc intersection normal
             Vec3d const normal = (intersectionPoint - Centerpoint).ToNormalized();
@@ -91,8 +112,8 @@ namespace Shapes
     {
         Vec3d const Pin;
         Vec3d const Normal;
-        Plane(std::string const &label, Color_t emission, Vec3d pin, Vec3d planeNormal)
-            : Shape(label, emission), Pin{pin}, Normal{planeNormal}
+        Plane(std::string const &label, MaterialInfo const &material, Vec3d pin, Vec3d planeNormal)
+            : Shape(label, material), Pin{pin}, Normal{planeNormal}
         {
         }
 
@@ -114,7 +135,10 @@ namespace Shapes
 
             // Calc reflection ray
             Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
-            Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
+            // offset a little from hitpoint to avoid collision with this shape on next iteration
+            // (this should not be done if collision is disabled for this shape on next iteration)
+            Vec3d const reflectionPoint = line.Origin + (distance - 0.001) * line.Direction;
+
             return HitEvent{distance, Line{reflectionPoint, reflectionDirection}};
         }
     };

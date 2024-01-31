@@ -8,23 +8,26 @@ namespace Primitives
 {
     using Color_t = std::array<unsigned char, 3>;
 
+    // Forward declare to use it
+    struct Vec3d;
+    using ColorD_t = Vec3d;
+
     struct Vec3d
     {
-        std::array<double, 3> const Vector;
-        double const &X = Vector[0];
-        double const &Y = Vector[1];
-        double const &Z = Vector[2];
+        std::array<double, 3> Data;
+        double const &X = Data[0];
+        double const &Y = Data[1];
+        double const &Z = Data[2];
 
         /// @brief Ctor
         /// @param x
         /// @param y
         /// @param z
         Vec3d(double x, double y, double z)
-            : Vector{{x, y, z}},
-              X{Vector[0]},
-              Y{Vector[1]},
-              Z{Vector[2]}
         {
+            Data[0] = x;
+            Data[1] = y;
+            Data[2] = z;
         }
 
         /// @brief Ctor
@@ -43,8 +46,15 @@ namespace Primitives
         /// @brief Copy Ctor
         /// @param other from other instance
         Vec3d(Vec3d const &other)
-            : Vec3d{other.Vector}
+            : Vec3d{other.Data}
         {
+        }
+
+        /// @brief Assignment operator
+        /// @param other from other instance
+        void operator=(Vec3d const &other) 
+        {
+            std::copy(other.Data.begin(), other.Data.end(), Data.begin());
         }
 
         /// @brief Compute norm (length) of vector
@@ -61,14 +71,24 @@ namespace Primitives
             return *this * (1.0 / GetNorm());
         }
 
+        /// @brief Multiplies X with X, Y with Y, etc
+        /// @param other another vector
+        /// @return Elementwise mulitplied vector
+        Vec3d MultiplyElementwise(const Vec3d &other) const
+        {
+            return Vec3d{X * other.X,
+                         Y * other.Y,
+                         Z * other.Z};
+        }
+
         /// @brief DOTPRODUCT
         /// @param righthand
         /// @return Elementwise multiplication and summation
         double operator*(const Vec3d &righthand) const
         {
-            return Vector[0] * righthand.Vector[0] +
-                   Vector[1] * righthand.Vector[1] +
-                   Vector[2] * righthand.Vector[2];
+            return X * righthand.X +
+                   Y * righthand.Y +
+                   Z * righthand.Z;
         }
 
         /// @brief Scalar multiply
@@ -118,13 +138,8 @@ namespace Primitives
 
     struct Line
     {
-        Vec3d const Origin;
-        Vec3d const Direction;
-
-        Line(Vec3d origin, Vec3d direction)
-            : Origin{origin}, Direction{direction}
-        {
-        }
+        Vec3d Origin;
+        Vec3d Direction;
     };
 
     constexpr double Deg2Rad(double deg)
