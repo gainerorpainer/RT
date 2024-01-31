@@ -10,15 +10,8 @@
 
 #include "ImgFile.h"
 
-bool custom_compar(std::pair<Shapes::Shape *, Shapes::HitEvent> const &a, std::pair<Shapes::Shape *, Shapes::HitEvent> const &b)
+Bitmap::Bitmap RT()
 {
-    return true;
-}
-
-int main()
-{
-    std::cout << "Hello World" << std::endl;
-
     Bitmap::Bitmap bitmap = {0};
 
     // Camera rays
@@ -27,6 +20,11 @@ int main()
     {
         for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
         {
+            for (size_t iteration = 0; iteration < 5; iteration++)
+            {
+                /* code */
+            }
+            
             // calc ray vector by mapping 2d to sphere coords
             Vec3d const rayDirection = cameraTransformation.Transform(x, y);
 
@@ -59,7 +57,16 @@ int main()
         }
     }
 
+    return bitmap;
+}
+
+int main()
+{
+    Bitmap::Bitmap const bitmap = RT();
+
     ImgFile::writeNetPbm("Render\\output.ppm", Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, bitmap.Pixels);
+
+    std::cout << "Done" << std::endl;
 
     return 0;
 }

@@ -8,7 +8,7 @@ import cv2
 IMGPATH = "..\\Render\\output.ppm"
 EXEPATH = "..\\main.exe"
 WINDOWNAME = "Output"
-WINDOW_SIZE = (200, 100)
+DOWNSIZE_FACTOR = 2
 
 last_modified = 0
 
@@ -38,12 +38,12 @@ while True:
             print("Exe not runnable")
             continue
         if returncode != 0:
-            print("Exe failed")
+            print("Nonzero return code: " + str(returncode))
             continue
         print(f"Runtime: {1000 * (time.time() - now):0.1f}ms")
         
         image = cv2.imread(IMGPATH)
-        image = cv2.resize(image, WINDOW_SIZE, interpolation=cv2.INTER_LINEAR)
+        image = cv2.resize(image, (image.shape[1] // DOWNSIZE_FACTOR, image.shape[0] // DOWNSIZE_FACTOR), interpolation=cv2.INTER_LINEAR)
         cv2.imshow(WINDOWNAME, image)
 
     time.sleep(0.25)

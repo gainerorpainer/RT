@@ -74,11 +74,7 @@ namespace Shapes
                 return std::nullopt;
 
             // calc parameter t on r = line.Origin + line.Direction * t
-            double const distance = -b - sqrt(discriminant);
-
-            if (distance < 0)
-                // inside sphere, bad
-                exit(-1);
+            double const distance = abs(-b - sqrt(discriminant));
 
             // intersection point
             Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
@@ -104,13 +100,10 @@ namespace Shapes
         {
             double const numerator = (Pin - line.Origin) * Normal;
             double const denominator = line.Direction * Normal;
-            // parallel
+            // parallel?
             if (denominator == 0)
             {
-                // line is within plane, bad
-                if (numerator == 0)
-                    exit(-1);
-
+                // if numerator != 0, the ray is within the plane, consider no hit
                 return std::nullopt;
             }
 

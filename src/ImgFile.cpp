@@ -5,7 +5,7 @@
 
 namespace ImgFile
 {
-    void writeNetPbm(std::string targetFile, unsigned int width, unsigned int height, unsigned char rgbData[][3])
+    void writeNetPbm(std::string targetFile, unsigned int width, unsigned int height, unsigned char const rgbData[][3])
     {
         FILE *const imageFile = fopen(targetFile.c_str(), "wb");
         if (imageFile == NULL)
