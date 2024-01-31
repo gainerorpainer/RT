@@ -50,16 +50,16 @@ Bitmap::Bitmap RT()
                 decltype(hits)::iterator nearest;
                 for (auto it = hits.begin(); it != hits.end(); it++)
                 {
-                    if (it->second.Distance >= shortestDistance)
+                    if (it->second.DistanceToSurface >= shortestDistance)
                         continue;
 
-                    shortestDistance = it->second.Distance;
+                    shortestDistance = it->second.DistanceToSurface;
                     nearest = it;
                 }
 
                 // apply material and new ray(s)
                 Shapes::MaterialInfo const &material = nearest->first->Material;
-                ray = nearest->second.Reflection;
+                ray = nearest->second.ReflectedRay;
 
                 if (material.IsLightsource)
                 {
@@ -70,6 +70,11 @@ Bitmap::Bitmap RT()
                 {
                     // apply color filter
                     colorFilters = colorFilters.MultiplyElementwise(material.TransferFunction);
+
+                    // apply lambertian law
+                    double const lambertianFactor = nearest->second.SurfaceNormal * ray.Direction;
+
+                    colorFilters = colorFilters * lambertianFactor;
                 }
             }
 

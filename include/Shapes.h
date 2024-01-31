@@ -12,8 +12,9 @@ namespace Shapes
 
     struct HitEvent
     {
-        double Distance;
-        Line Reflection;
+        double DistanceToSurface;
+        Vec3d SurfaceNormal;
+        Line ReflectedRay;
     };
 
     bool AlmostSame(double a, double b)
@@ -64,8 +65,8 @@ namespace Shapes
 
     struct Sphere : public Shape
     {
-        Vec3d const Centerpoint;
-        double const Radius;
+        Vec3d Centerpoint;
+        double Radius;
 
         Sphere(std::string const &label, MaterialInfo const &material, Vec3d center, double radius)
             : Shape(label, material), Centerpoint{center}, Radius{radius}
@@ -104,16 +105,20 @@ namespace Shapes
             Vec3d const normal = (intersectionPoint - Centerpoint).ToNormalized();
             Vec3d const reflectionDirection = Reflect(line.Direction, normal);
 
-            return HitEvent{distance, Line{intersectionPoint, reflectionDirection}};
+            return HitEvent{.DistanceToSurface = distance,
+                            .SurfaceNormal = normal,
+                            .ReflectedRay = Line{intersectionPoint, reflectionDirection}};
         }
     };
 
     struct Plane : public Shape
     {
-        Vec3d const Pin;
-        Vec3d const Normal;
+        Vec3d Pin;
+        Vec3d Normal;
+
         Plane(std::string const &label, MaterialInfo const &material, Vec3d pin, Vec3d planeNormal)
-            : Shape(label, material), Pin{pin}, Normal{planeNormal}
+            // make ctor more accessible by always normalizing normal vector
+            : Shape(label, material), Pin{pin}, Normal{planeNormal.ToNormalized()}
         {
         }
 
@@ -139,7 +144,9 @@ namespace Shapes
             // (this should not be done if collision is disabled for this shape on next iteration)
             Vec3d const reflectionPoint = line.Origin + (distance - 0.001) * line.Direction;
 
-            return HitEvent{distance, Line{reflectionPoint, reflectionDirection}};
+            return HitEvent{.DistanceToSurface = distance,
+                            .SurfaceNormal = Normal,
+                            .ReflectedRay = Line{reflectionPoint, reflectionDirection}};
         }
     };
 }
