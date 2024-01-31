@@ -18,12 +18,13 @@ namespace ImgFile
         fprintf(imageFile, "%u %u\n", width, height); // dimensions
         fprintf(imageFile, "255\n");                  // pixeldepth
 
-        for (size_t x = 0; x < width; x++)
+        // upside down
+        for (size_t y = height; y != (size_t)-1; y--)
         {
-            for (size_t y = 0; y < height; y++)
+            for (size_t x = 0; x < width; x++)
             {
                 for (size_t i = 0; i < 3; i++)
-                    fputc(rgbData[y + x * height][i], imageFile);
+                    fputc(rgbData[y * width + x][i], imageFile);
             }
         }
 

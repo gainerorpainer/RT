@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <cassert>
+#include <string>
 
 #include "Primitives.h"
 
@@ -25,9 +26,10 @@ namespace Shapes
     public:
         virtual std::optional<HitEvent> CheckHit(Line const &line) const = 0;
         Color_t const Emission;
+        std::string const Label;
 
     protected:
-        Shape(Color_t color) : Emission{color}
+        Shape(std::string const &label, Color_t color) : Emission{color}, Label{label}
         {
         }
 
@@ -46,8 +48,8 @@ namespace Shapes
         Vec3d const Centerpoint;
         double const Radius;
 
-        Sphere(Color_t emission, Vec3d center, double radius)
-            : Shape(emission), Centerpoint{center}, Radius{radius}
+        Sphere(std::string const &label, Color_t emission, Vec3d center, double radius)
+            : Shape(label, emission), Centerpoint{center}, Radius{radius}
         {
         }
 
@@ -93,8 +95,8 @@ namespace Shapes
     {
         Vec3d const Pin;
         Vec3d const Normal;
-        Plane(Color_t emission, Vec3d pin, Vec3d planeNormal)
-            : Shape(emission), Pin{pin}, Normal{planeNormal}
+        Plane(std::string const &label, Color_t emission, Vec3d pin, Vec3d planeNormal)
+            : Shape(label, emission), Pin{pin}, Normal{planeNormal}
         {
         }
 

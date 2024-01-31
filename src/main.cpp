@@ -23,9 +23,9 @@ int main()
 
     // Camera rays
     Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
-    for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+    for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
     {
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+        for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
         {
             // calc ray vector by mapping 2d to sphere coords
             Vec3d const rayDirection = cameraTransformation.Transform(x, y);
@@ -53,6 +53,7 @@ int main()
                     continue;
                 nearest = std::make_pair(it->first, it->second.Distance);
             }
+
             // paint pixel with object color
             std::copy(nearest.first->Emission.begin(), nearest.first->Emission.end(), bitmap.at(x, y));
         }
