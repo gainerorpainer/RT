@@ -11,9 +11,6 @@ DLLPATH = "rt.dll"
 WINDOWNAME = "Output"
 DOWNSIZE_FACTOR = 2
 
-os.add_dll_directory("C:\\Windows\\system32")
-os.add_dll_directory("C:\\ProgramData\\Symantec\\Symantec Endpoint Protection\\14.3.9210.6000.105\\Data/Sysfer\\x64")
-
 last_modified = 0
 
 cv2.namedWindow(WINDOWNAME)

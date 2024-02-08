@@ -4,8 +4,9 @@
     {
       "type": "cppbuild",
       "label": "DLL (Release)",
-      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "command": "g++",
       "args": [
+        "--std=gnu++2a",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
@@ -22,12 +23,12 @@
       },
       "problemMatcher": ["$gcc"],
       "group": "build",
-      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+      "detail": "compiler: g++"
     },
     {
       "type": "cppbuild",
       "label": "EXE (Debug)",
-      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "command": "g++",
       "args": [
         "-fdiagnostics-color=always",
         "-g",
@@ -41,12 +42,12 @@
       },
       "problemMatcher": ["$gcc"],
       "group": "build",
-      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+      "detail": "compiler: g++"
     },
     {
       "type": "cppbuild",
       "label": "EXE (Release)",
-      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "command": "g++",
       "args": [
         "-fdiagnostics-color=always",
         "-g",
@@ -62,7 +63,7 @@
       },
       "problemMatcher": ["$gcc"],
       "group": "build",
-      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+      "detail": "compiler: g++"
     }
   ]
 }
