@@ -27,11 +27,12 @@ namespace Shapes
         bool IsLightsource;
         Color_t Emission;
         ColorD_t TransferFunction;
-
-        static MaterialInfo MakeAbsorbing(Color_t const &visibleColor)
+        double DiffusionFactor;
+        
+        static MaterialInfo MakeAbsorbing(Color_t const &visibleColor, double diffusionFactor = 0.0)
         {
             ColorD_t const filter = {(double)visibleColor[0] / 255.0, (double)visibleColor[1] / 255.0, (double)visibleColor[2] / 255.0};
-            return MaterialInfo{.IsLightsource = false, .Emission = {}, .TransferFunction = filter};
+            return MaterialInfo{.IsLightsource = false, .Emission = {}, .TransferFunction = filter, .DiffusionFactor = diffusionFactor};
         }
 
         static MaterialInfo MakeEmitting(Color_t const &emission)

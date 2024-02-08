@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -11,6 +13,27 @@
 #include "ImgFile.h"
 
 constexpr unsigned int ITERATIONS = 5;
+
+Bitmap::Bitmap RT();
+
+// exe entry point
+int main()
+{
+    run();
+    return 0;
+}
+
+// dll main function
+int run()
+{
+    Bitmap::Bitmap const bitmap = RT();
+
+    ImgFile::writeNetPbm("Render\\output.ppm", Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, bitmap.Pixels);
+
+    std::cout << "Done" << std::endl;
+
+    return 0;
+}
 
 Bitmap::Bitmap RT()
 {
@@ -59,6 +82,8 @@ Bitmap::Bitmap RT()
 
                 // apply material and new ray(s)
                 Shapes::MaterialInfo const &material = nearest->first->Material;
+
+                // apply diffusion
                 ray = nearest->second.ReflectedRay;
 
                 if (material.IsLightsource)
@@ -89,15 +114,4 @@ Bitmap::Bitmap RT()
     }
 
     return bitmap;
-}
-
-int main()
-{
-    Bitmap::Bitmap const bitmap = RT();
-
-    ImgFile::writeNetPbm("Render\\output.ppm", Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, bitmap.Pixels);
-
-    std::cout << "Done" << std::endl;
-
-    return 0;
 }

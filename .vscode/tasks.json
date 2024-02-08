@@ -1,49 +1,68 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "cppbuild",
-			"label": "Build (Debug)",
-			"command": "C:\\msys64\\mingw64\\bin\\g++.exe",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${workspaceFolder}\\src\\*.cpp",
-				"-I${workspaceFolder}\\include\\",
-				"-o",
-				"${workspaceFolder}\\main.exe"
-			],
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
-			"detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
-		},
-		{
-			"type": "cppbuild",
-			"label": "Build (Release)",
-			"command": "C:\\msys64\\mingw64\\bin\\g++.exe",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${workspaceFolder}\\src\\*.cpp",
-				"-I${workspaceFolder}\\include\\",
-				"-o",
-				"${workspaceFolder}\\main.exe",
-				"-O2",
-				"-DNDEBUG"
-			],
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
-			"detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
-		},
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cppbuild",
+      "label": "DLL (Release)",
+      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${workspaceFolder}\\src\\*.cpp",
+        "-I${workspaceFolder}\\include\\",
+        "-o",
+        "${workspaceFolder}\\rt.dll",
+        "-O2",
+        "-DNDEBUG",
+        "-shared",
+        "-Wl,--subsystem,windows"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": "build",
+      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+    },
+    {
+      "type": "cppbuild",
+      "label": "EXE (Debug)",
+      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${workspaceFolder}\\src\\*.cpp",
+        "-I${workspaceFolder}\\include\\",
+        "-o",
+        "${workspaceFolder}\\rt.exe"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": "build",
+      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+    },
+    {
+      "type": "cppbuild",
+      "label": "EXE (Release)",
+      "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${workspaceFolder}\\src\\*.cpp",
+        "-I${workspaceFolder}\\include\\",
+        "-o",
+        "${workspaceFolder}\\rt.exe",
+        "-O2",
+        "-DNDEBUG"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": "build",
+      "detail": "compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+    }
+  ]
 }
