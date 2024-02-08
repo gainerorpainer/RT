@@ -2,5 +2,5 @@
 
 extern "C"
 {
-    __declspec(dllexport) int run();
+    __declspec(dllexport) int main();
 }

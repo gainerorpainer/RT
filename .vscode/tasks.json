@@ -30,6 +30,7 @@
       "label": "EXE (Debug)",
       "command": "g++",
       "args": [
+        "--std=gnu++2a",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
@@ -49,6 +50,7 @@
       "label": "EXE (Release)",
       "command": "g++",
       "args": [
+        "--std=gnu++2a",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
