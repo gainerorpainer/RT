@@ -25,7 +25,11 @@ namespace Primitives
 
         /// @brief Ctor
         /// @param vector from array
-        Vec3d(std::array<double, 3> vector);
+        Vec3d(std::array<double, 3> const &vector);
+
+        /// @brief Ctor
+        /// @param color from color
+        Vec3d(Color_t const &color);
 
         /// @brief Default Ctor
         Vec3d();
@@ -37,6 +41,9 @@ namespace Primitives
         /// @brief Assignment operator
         /// @param other from other instance
         void operator=(Vec3d const &other);
+
+        template <typename T>
+        std::array<T, 3> Cast() const;
 
         /// @brief Compute norm (length) of vector
         /// @return The norm (length)
@@ -75,6 +82,12 @@ namespace Primitives
         /// @return Elementwise minus
         Vec3d operator-(const Vec3d &righthand) const;
     };
+
+    template <typename T>
+    inline std::array<T, 3> Vec3d::Cast() const
+    {
+        return std::array<T, 3>{(T)Data[0], (T)Data[1], (T)Data[2]};
+    }
 
     /// @brief Scalar multiplication (lefthanded)
     /// @param lefthand scalar

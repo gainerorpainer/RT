@@ -1,7 +1,8 @@
 import os
 import time
 import ctypes
-import tempfile, shutil
+import tempfile
+import shutil
 import uuid
 
 import cv2
@@ -35,7 +36,7 @@ while True:
         last_modified = modified
 
         now = time.time()
-        dll.run()
+        dll.main()
         print(f"Runtime: {1000 * (time.time() - now):0.1f}ms")
 
         # most clean way to release dll

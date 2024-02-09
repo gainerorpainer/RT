@@ -9,8 +9,13 @@ namespace Primitives
         Data[2] = z;
     }
 
-    Vec3d::Vec3d(std::array<double, 3> vector)
+    Vec3d::Vec3d(std::array<double, 3> const &vector)
         : Vec3d{vector[0], vector[1], vector[2]}
+    {
+    }
+
+    Vec3d::Vec3d(Color_t const &color)
+        : Vec3d{(double)color[0], (double)color[1], (double)color[2]}
     {
     }
 

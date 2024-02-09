@@ -5,9 +5,10 @@
 #include "Camera.h"
 #include "Scene.h"
 
-constexpr unsigned int ITERATIONS = 5;
-
 namespace Rt
 {
+    constexpr unsigned int BOUNCE_ITERATIONS = 5;
+    constexpr unsigned int DIFFUSE_RAYS = 5;
+
     Bitmap::Bitmap RT();
 }
