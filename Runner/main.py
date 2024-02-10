@@ -51,6 +51,8 @@ def main():
             image = cv2.imread(IMGPATH)
             image = cv2.resize(
                 image, (image.shape[1] // DOWNSIZE_FACTOR, image.shape[0] // DOWNSIZE_FACTOR), interpolation=cv2.INTER_LINEAR)
+            cv2.putText(image, f"{1000 * (time.time() - now):0.1f}ms",
+                        (0, image.shape[0] - 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             cv2.imshow(WINDOWNAME, image)
 
         time.sleep(0.25)
@@ -58,6 +60,7 @@ def main():
         if key == 32:
             print("Reset by user")
             last_modified = 0
+            
 
 
 if __name__ == "__main__":

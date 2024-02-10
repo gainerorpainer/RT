@@ -27,6 +27,7 @@ int main()
 
     std::cout << "Raytracing..." << std::endl;
 
+
     std::for_each(EXECUTION_POLICY, workerResults.begin(), workerResults.end(), [](std::unique_ptr<Bitmap::BitmapD> &target)
                   {
                       // heap alloc bitmap

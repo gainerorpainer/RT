@@ -11,32 +11,28 @@ namespace Rt
         // see if ray intersects any object
         struct rayIntersection_t
         {
-            Shapes::Shape const &Shape;
+            Shapes::Shape const *Shape;
             Shapes::HitEvent Hitevent;
         };
-        std::vector<rayIntersection_t> hits;
+        std::array<rayIntersection_t, Scene::Objects.size()> hits = {};
         for (unsigned int i = 0; i < Scene::Objects.size(); i++)
         {
-            Shapes::Shape const &shape = *Scene::Objects[i];
-            auto hitevent = shape.CheckHit(ray);
+            Shapes::Shape const *shape = Scene::Objects[i];
+            auto hitevent = shape->CheckHit(ray);
             if (!hitevent)
                 continue;
 
-            hits.emplace_back(shape, hitevent.value());
-        }
-
-        if (hits.size() == 0)
-        {
-            // nothing hit, bad?
-            DEBUG_WARN("Ray did not hit anything!");
-            return RayMarchResult{};
+            hits[i] = rayIntersection_t{shape, hitevent.value()};
         }
 
         // find element with shortest distance
         double shortestDistance = INFINITY;
-        decltype(hits)::iterator nearest;
+        decltype(hits)::iterator nearest = hits.end();
         for (auto it = hits.begin(); it != hits.end(); it++)
         {
+            if (!it->Shape)
+                continue;
+
             if (it->Hitevent.DistanceToSurface >= shortestDistance)
                 continue;
 
@@ -44,7 +40,14 @@ namespace Rt
             nearest = it;
         }
 
-        Shapes::MaterialInfo const &material = nearest->Shape.Material;
+        if (nearest == hits.end())
+        {
+            // nothing hit, bad?
+            DEBUG_WARN("Ray did not hit anything!");
+            return RayMarchResult{};
+        }
+
+        Shapes::MaterialInfo const &material = nearest->Shape->Material;
 
         // check if light source was hit
         if (material.IsLightsource)
@@ -67,11 +70,11 @@ namespace Rt
                 RayMarchResult ProbedResult;
                 double LambertianFactor;
             };
-            std::vector<rayProbe_t> rayProbes;
+            std::array<rayProbe_t, DIFFUSE_RAYS> rayProbes = {};
             if (material.DiffusionFactor == 0)
             {
                 // perfect mirror will only spawn single ray
-                rayProbes.emplace_back(MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), 1);
+                rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), 1};
             }
             else
             {
@@ -82,11 +85,11 @@ namespace Rt
                     Line randomRay{nearest->Hitevent.ReflectedRay};
                     randomRay.Direction = (randomRay.Direction + Vec3d{RandDouble(), RandDouble(), RandDouble()}).ToNormalized();
 
-                    rayProbes.emplace_back(
+                    rayProbes[j] = rayProbe_t{
                         // recursively march
                         MarchRay(randomRay, recursionDepth + 1),
                         // both have norm = 1
-                        abs(ray.Direction * randomRay.Direction));
+                        abs(ray.Direction * randomRay.Direction)};
                 }
             }
 
@@ -117,26 +120,25 @@ namespace Rt
         return std::uniform_real_distribution<double>{}(RngEngine);
     }
 
-    void Raytracer::RunBitmap(Bitmap::BitmapD & output)
+    void Raytracer::RunBitmap(Bitmap::BitmapD &output)
     {
         // Camera rays
         Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+        for (size_t i = 0; i < Bitmap::BITMAP_HEIGHT * Bitmap::BITMAP_WIDTH; i++)
         {
-            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
-            {
-                // first ray comes from cam
-                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
+            // first ray comes from cam
+            unsigned int const x = i % Bitmap::BITMAP_WIDTH;
+            unsigned int const y = i / Bitmap::BITMAP_WIDTH;
+            Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
 
-                // Let ray bounce around and determine the color
-                auto const raymarch = MarchRay(ray);
+            // Let ray bounce around and determine the color
+            auto const raymarch = MarchRay(ray);
 
-                // apply color filters on the emmision spectrum
-                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+            // apply color filters on the emmision spectrum
+            Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
 
-                // paint pixel with object color into *image space*
-                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
-            }
+            // paint pixel with object color into *image space*
+            std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
         }
     }
 }

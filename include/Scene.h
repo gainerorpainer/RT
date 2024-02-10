@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <array>
 
 #include "Shapes.h"
 
@@ -8,7 +8,7 @@ namespace Scene
 {
     using namespace Shapes;
 
-    std::vector<Shape *> const Objects = {
+    std::array<Shape const*, 5> const Objects = {
         new Plane{"Sunplane",
                   MaterialInfo::MakeEmitting({255, 255, 255}),
                   {-100, 100, 100},
