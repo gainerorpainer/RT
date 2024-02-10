@@ -36,7 +36,7 @@ def main():
                 dll = ctypes.WinDLL(temp_dll, winmode=0)
             except (PermissionError, OSError):
                 print("File locked/invalid...")
-                time.sleep(0.25)
+                time.sleep(1)
                 continue
 
             last_modified = modified

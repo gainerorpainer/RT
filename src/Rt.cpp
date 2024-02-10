@@ -124,21 +124,22 @@ namespace Rt
     {
         // Camera rays
         Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
-        for (size_t i = 0; i < Bitmap::BITMAP_HEIGHT * Bitmap::BITMAP_WIDTH; i++)
+        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
         {
-            // first ray comes from cam
-            unsigned int const x = i % Bitmap::BITMAP_WIDTH;
-            unsigned int const y = i / Bitmap::BITMAP_WIDTH;
-            Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
+            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+            {
+                // first ray comes from cam
+                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
 
-            // Let ray bounce around and determine the color
-            auto const raymarch = MarchRay(ray);
+                // Let ray bounce around and determine the color
+                auto const raymarch = MarchRay(ray);
 
-            // apply color filters on the emmision spectrum
-            Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+                // apply color filters on the emmision spectrum
+                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
 
-            // paint pixel with object color into *image space*
-            std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
+                // paint pixel with object color into *image space*
+                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
+            }
         }
     }
 }

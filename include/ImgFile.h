@@ -25,13 +25,9 @@ namespace ImgFile
         outfile.write((char const *)header.c_str(), header.length());
 
         // cast to output format & write
-        std::unique_ptr<Bitmap::Bitmap> targetFormat{new Bitmap::Bitmap};
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
-            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
-                for (size_t i = 0; i < 3; i++)
-                    targetFormat->at(x, y, i) += (unsigned char)bitmap.at(x, y, i);
-
-        outfile.write((char const *)targetFormat->Pixels.begin(), targetFormat->Pixels.size());
+        Bitmap::Bitmap targetFormat;
+        std::copy(bitmap.Pixels.begin(), bitmap.Pixels.end(), targetFormat.Pixels.begin());
+        outfile.write((char const *)targetFormat.Pixels.begin(), targetFormat.Pixels.size());
 
         outfile.close();
     }

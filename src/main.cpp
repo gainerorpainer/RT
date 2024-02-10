@@ -3,7 +3,6 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <execution>
 #include <thread>
 #include <memory>
 
@@ -11,46 +10,56 @@
 #include "ImgFile.h"
 
 #ifdef NDEBUG
-// optimize through parallel threads for denoising
-constexpr auto EXECUTION_POLICY = std::execution::par;
+// optimize through parallel threads
+constexpr bool USE_PARALLEL = true;
 #else
-constexpr auto EXECUTION_POLICY = std::execution::seq;
+constexpr bool USE_PARALLEL = false;
 #endif
 
 // exe entry point
 int main()
 {
-    const unsigned int workerCount = 1; // std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
-
-    std::vector<std::unique_ptr<Bitmap::BitmapD>> workerResults;
-    workerResults.resize(workerCount);
-
     std::cout << "Raytracing..." << std::endl;
-
-
-    std::for_each(EXECUTION_POLICY, workerResults.begin(), workerResults.end(), [](std::unique_ptr<Bitmap::BitmapD> &target)
-                  {
-                      // heap alloc bitmap
-                      std::unique_ptr<Bitmap::BitmapD> bitmap{new Bitmap::BitmapD{}};
-                      auto raytracer = Rt::Raytracer{};
-                      raytracer.RunBitmap(*bitmap);
-
-                      // transfer ownership
-                      target = std::move(bitmap); });
-
-    std::cout << "Averaging..." << std::endl;
-
-    // average all results
     std::unique_ptr<Bitmap::BitmapD> resultBuffer{new Bitmap::BitmapD{}};
-    for (auto const &piece : workerResults)
+    if (!USE_PARALLEL)
     {
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+        auto raytracer = Rt::Raytracer{};
+        raytracer.RunBitmap(*resultBuffer);
+    }
+    else
+    {
+        const unsigned int workerCount = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
+        std::vector<std::shared_ptr<Bitmap::BitmapD>> workerResults;
+        std::vector<std::thread> sidethreads;
+        for (size_t i = 0; i < workerCount; i++)
         {
-            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+            // heap alloc bitmap
+            workerResults.push_back(std::make_shared<Bitmap::BitmapD>());
+
+            // run as sidethread
+            sidethreads.emplace_back([](std::shared_ptr<Bitmap::BitmapD> bitmap)
+                                     {
+                                    auto raytracer = Rt::Raytracer{};
+                                    raytracer.RunBitmap(*bitmap); },
+                                     workerResults.back());
+        }
+
+        for (auto &thread : sidethreads)
+            thread.join();
+
+        std::cout << "Averaging..." << std::endl;
+
+        // average all results
+        for (auto const &piece : workerResults)
+        {
+            for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
             {
-                for (size_t i = 0; i < 3; i++)
+                for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
                 {
-                    resultBuffer->at(x, y, i) += piece->at(x, y, i) / (double)workerCount;
+                    for (size_t i = 0; i < 3; i++)
+                    {
+                        resultBuffer->at(x, y, i) += piece->at(x, y, i) / (double)workerCount;
+                    }
                 }
             }
         }
