@@ -7,19 +7,21 @@
       "command": "g++",
       "args": [
         "--std=gnu++2a",
+        "-pthread",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
         "-I${workspaceFolder}\\include\\",
         "-o",
         "${workspaceFolder}\\rt.dll",
-        "-O2",
         "-DNDEBUG",
         "-shared",
-        "-Wl,--subsystem,windows"
+        "-Wl,--subsystem,windows",
+        "-Ofast",
+        "-flto",
       ],
       "options": {
-        "cwd": "${fileDirname}"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": ["$gcc"],
       "group": "build",
@@ -31,6 +33,8 @@
       "command": "g++",
       "args": [
         "--std=gnu++2a",
+        "-static",
+        "-pthread",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
@@ -39,7 +43,7 @@
         "${workspaceFolder}\\rt.exe"
       ],
       "options": {
-        "cwd": "${fileDirname}"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": ["$gcc"],
       "group": "build",
@@ -51,17 +55,18 @@
       "command": "g++",
       "args": [
         "--std=gnu++2a",
+        "-pthread",
         "-fdiagnostics-color=always",
         "-g",
         "${workspaceFolder}\\src\\*.cpp",
         "-I${workspaceFolder}\\include\\",
         "-o",
         "${workspaceFolder}\\rt.exe",
-        "-O2",
-        "-DNDEBUG"
+        "-DNDEBUG",
+        "-Ofast",
       ],
       "options": {
-        "cwd": "${fileDirname}"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": ["$gcc"],
       "group": "build",

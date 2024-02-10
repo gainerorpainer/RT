@@ -10,12 +10,12 @@ namespace Shapes
     MaterialInfo MaterialInfo::MakeAbsorbing(Color_t const &visibleColor, double diffusionFactor)
     {
         ColorD_t const filter = {(double)visibleColor[0] / 255.0, (double)visibleColor[1] / 255.0, (double)visibleColor[2] / 255.0};
-        return MaterialInfo{.IsLightsource = false, .Emission = {}, .TransferFunction = filter, .DiffusionFactor = diffusionFactor};
+        return MaterialInfo{.IsLightsource = false, .Emission = {}, .ColorFilter = filter, .DiffusionFactor = diffusionFactor};
     }
 
     MaterialInfo MaterialInfo::MakeEmitting(Color_t const &emission)
     {
-        return MaterialInfo{.IsLightsource = true, .Emission = emission, .TransferFunction = {}};
+        return MaterialInfo{.IsLightsource = true, .Emission = emission, .ColorFilter = {}};
     }
 
     Shape::Shape(std::string const &label, MaterialInfo const &material)

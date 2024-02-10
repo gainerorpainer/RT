@@ -20,8 +20,8 @@ namespace Shapes
     struct MaterialInfo
     {
         bool IsLightsource;
-        Color_t Emission;
-        ColorD_t TransferFunction;
+        ColorD_t Emission;
+        ColorD_t ColorFilter;
         double DiffusionFactor;
 
         static MaterialInfo MakeAbsorbing(Color_t const &visibleColor, double diffusionFactor = 0.0);

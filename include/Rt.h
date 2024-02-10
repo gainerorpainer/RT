@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #include "Bitmap.h"
 #include "Transformation.h"
 #include "Camera.h"
@@ -7,8 +9,25 @@
 
 namespace Rt
 {
-    constexpr unsigned int BOUNCE_ITERATIONS = 5;
-    constexpr unsigned int DIFFUSE_RAYS = 5;
+    constexpr unsigned int BOUNCE_ITERATIONS = 4;
+    constexpr unsigned int DIFFUSE_RAYS = 4;
 
-    Bitmap::Bitmap RT();
+    class Raytracer
+    {
+    private:
+        std::default_random_engine RngEngine{};
+
+        struct RayMarchResult
+        {
+            ColorD_t ColorFilters;
+            ColorD_t Emissions;
+        };
+
+        double RandDouble();
+        RayMarchResult MarchRay(Line const &ray, unsigned int const recursionDepth = 0);
+
+    public:
+        void RunBitmap(Bitmap::BitmapD & output);
+    };
+
 }

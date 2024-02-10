@@ -1,131 +1,124 @@
 #include "Rt.h"
 
-#include <random>
 #include <algorithm>
+
+#include "Debug.h"
 
 namespace Rt
 {
-    class
+    Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, unsigned int const recursionDepth)
     {
-    public:
-        double Next()
+        // see if ray intersects any object
+        struct rayIntersection_t
         {
-            return Distribution(Engine);
+            Shapes::Shape const &Shape;
+            Shapes::HitEvent Hitevent;
+        };
+        std::vector<rayIntersection_t> hits;
+        for (unsigned int i = 0; i < Scene::Objects.size(); i++)
+        {
+            Shapes::Shape const &shape = *Scene::Objects[i];
+            auto hitevent = shape.CheckHit(ray);
+            if (!hitevent)
+                continue;
+
+            hits.emplace_back(shape, hitevent.value());
         }
 
-    private:
-        std::uniform_real_distribution<double> Distribution{0, 1};
-        std::default_random_engine Engine{};
-    } Rng;
-
-    Color_t MarchRay(Line ray, unsigned int const recursionDepth = 0)
-    {
-        ColorD_t colorFilters = {1, 1, 1};
-        Color_t lightsource = {0, 0, 0};
-
-        for (size_t iteration = 0; iteration < (BOUNCE_ITERATIONS >> recursionDepth); iteration++)
+        if (hits.size() == 0)
         {
-            // see if ray intersects any object
-            std::vector<std::pair<Shapes::Shape *, Shapes::HitEvent>> hits;
-            for (unsigned int i = 0; i < Scene::Objects.size(); i++)
+            // nothing hit, bad?
+            DEBUG_WARN("Ray did not hit anything!");
+            return RayMarchResult{};
+        }
+
+        // find element with shortest distance
+        double shortestDistance = INFINITY;
+        decltype(hits)::iterator nearest;
+        for (auto it = hits.begin(); it != hits.end(); it++)
+        {
+            if (it->Hitevent.DistanceToSurface >= shortestDistance)
+                continue;
+
+            shortestDistance = it->Hitevent.DistanceToSurface;
+            nearest = it;
+        }
+
+        Shapes::MaterialInfo const &material = nearest->Shape.Material;
+
+        // check if light source was hit
+        if (material.IsLightsource)
+        {
+            return RayMarchResult{.ColorFilters = {1, 1, 1}, .Emissions = material.Emission};
+        }
+
+        Vec3d colorFilterAccumulator;
+        Vec3d emissionAccumulator;
+        // Stop recursion at some depth
+        if (recursionDepth == BOUNCE_ITERATIONS)
+        {
+            colorFilterAccumulator = Vec3d{1, 1, 1};
+            emissionAccumulator = Vec3d{0, 0, 0};
+        }
+        else
+        {
+            struct rayProbe_t
             {
-                Shapes::Shape *shape = Scene::Objects[i];
-                auto hitevent = shape->CheckHit(ray);
-                if (!hitevent)
-                    continue;
-
-                hits.push_back(std::make_pair(shape, hitevent.value()));
-            }
-
-            if (hits.size() == 0)
-                // nothing hit
-                break;
-
-            // find element with shortest distance
-            double shortestDistance = INFINITY;
-            decltype(hits)::iterator nearest;
-            for (auto it = hits.begin(); it != hits.end(); it++)
+                RayMarchResult ProbedResult;
+                double LambertianFactor;
+            };
+            std::vector<rayProbe_t> rayProbes;
+            if (material.DiffusionFactor == 0)
             {
-                if (it->second.DistanceToSurface >= shortestDistance)
-                    continue;
-
-                shortestDistance = it->second.DistanceToSurface;
-                nearest = it;
-            }
-
-            // check if light was hit
-            Shapes::MaterialInfo const &material = nearest->first->Material;
-            if (material.IsLightsource)
-            {
-                lightsource = material.Emission;
-                break;
-            }
-
-            if (material.DiffusionFactor > 0)
-            {
-                struct RayProbe
-                {
-                    Color_t ProbedColor;
-                    double Weight;
-                };
-                // spawn random rays
-                std::array<RayProbe, DIFFUSE_RAYS> rayProbes;
-                for (size_t j = 0; j < (DIFFUSE_RAYS >> recursionDepth); j++)
-                {
-                    // TODO: better way for random rays
-                    Line randomRay{ray};
-                    randomRay.Direction = (randomRay.Direction + Vec3d{Rng.Next(), Rng.Next(), Rng.Next()}).ToNormalized();
-
-                    RayProbe const result{
-                        // RECURSION!
-                        .ProbedColor = MarchRay(randomRay, recursionDepth + 1),
-                        // angle formula kinda optimized since both have norm = 1
-                        .Weight = Deg2Rad(90) - acos(ray.Direction * randomRay.Direction)};
-
-                    rayProbes[j] = result;
-                }
-
-                // calc weighted average over the inverse angle
-                double const weightSum = std::accumulate(rayProbes.begin(), rayProbes.end(), 0, [](int & last, auto const &elem)
-                                                         { return last + elem.Weight; });
-                ColorD_t accumulator{};
-                for (size_t j = 0; j < DIFFUSE_RAYS; j++)
-                {
-                    rayProbes[j].Weight /= weightSum;
-                    accumulator = accumulator + (rayProbes[j].Weight / weightSum) * Vec3d{rayProbes[j].ProbedColor};
-                }
-
-                Color_t const diffuseRayResult = (accumulator * (1 / weightSum)).Cast<unsigned char>();
+                // perfect mirror will only spawn single ray
+                rayProbes.emplace_back(MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), 1);
             }
             else
             {
-                ray = nearest->second.ReflectedRay;
+                // spawn random rays
+                for (size_t j = 0; j < DIFFUSE_RAYS; j++)
+                {
+                    // TODO: better way for random rays
+                    Line randomRay{nearest->Hitevent.ReflectedRay};
+                    randomRay.Direction = (randomRay.Direction + Vec3d{RandDouble(), RandDouble(), RandDouble()}).ToNormalized();
+
+                    rayProbes.emplace_back(
+                        // recursively march
+                        MarchRay(randomRay, recursionDepth + 1),
+                        // both have norm = 1
+                        abs(ray.Direction * randomRay.Direction));
+                }
             }
 
-            // apply color filter
-            colorFilters = colorFilters.MultiplyElementwise(material.TransferFunction);
-
-            // apply lambertian law
-            double const lambertianFactor = nearest->second.SurfaceNormal * ray.Direction;
-
-            colorFilters = colorFilters * lambertianFactor;
+            // calc weighted average over the lambertian factor
+            colorFilterAccumulator = Vec3d{0, 0, 0};
+            emissionAccumulator = Vec3d{0, 0, 0};
+            double const weightSum = std::accumulate(rayProbes.begin(), rayProbes.end(), 0.0, [](double const &last, rayProbe_t const &elem)
+                                                     { return last + elem.LambertianFactor; });
+            for (size_t j = 0; j < DIFFUSE_RAYS; j++)
+            {
+                colorFilterAccumulator = colorFilterAccumulator + (rayProbes[j].LambertianFactor / weightSum) * Vec3d{rayProbes[j].ProbedResult.ColorFilters};
+                emissionAccumulator = emissionAccumulator + (rayProbes[j].LambertianFactor / weightSum) * Vec3d{rayProbes[j].ProbedResult.Emissions};
+            }
         }
 
-        // calculate color filters for each hit
-        Color_t pixelcolor;
-        for (unsigned int i = 0; i < 3; i++)
-            pixelcolor[i] = (unsigned char)((double)lightsource[i] * colorFilters.Data[i]);
+        // apply lambertian law from this hit
+        double const lambertianFactor = abs(nearest->Hitevent.SurfaceNormal * ray.Direction); // == 1 if parallel
+        colorFilterAccumulator = colorFilterAccumulator * lambertianFactor;
+        emissionAccumulator = emissionAccumulator * lambertianFactor;
 
-        return pixelcolor;
+        // merge with material of hit shape
+        RayMarchResult const result{.ColorFilters = colorFilterAccumulator.MultiplyElementwise(material.ColorFilter), .Emissions = emissionAccumulator + material.Emission};
+        return result;
     }
 
-    Bitmap::Bitmap RT()
+    double Raytracer::RandDouble()
     {
-        // seed for rng
-        std::srand(42);
+        return std::uniform_real_distribution<double>{}(RngEngine);
+    }
 
-        Bitmap::Bitmap bitmap = {0};
-
+    void Raytracer::RunBitmap(Bitmap::BitmapD & output)
+    {
         // Camera rays
         Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
         for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
@@ -136,13 +129,14 @@ namespace Rt
                 Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
 
                 // Let ray bounce around and determine the color
-                auto const pixelcolor = MarchRay(ray);
+                auto const raymarch = MarchRay(ray);
 
-                // paint pixel with object color
-                std::copy(pixelcolor.begin(), pixelcolor.end(), bitmap.at(x, y));
+                // apply color filters on the emmision spectrum
+                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+
+                // paint pixel with object color into *image space*
+                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
             }
         }
-
-        return bitmap;
     }
 }
