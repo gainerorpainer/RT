@@ -22,7 +22,7 @@ namespace Scene
                   {0, 0, 0},
                   {0, 0, 1}},
         new Sphere{"Red Sphere",
-                   MaterialInfo::MakeAbsorbing({230, 100, 100}, 0),
+                   MaterialInfo::MakeAbsorbing({230, 100, 100}, 0.5),
                    {3, -1, 1},
                    1},
         new Sphere{"Blue Sphere",

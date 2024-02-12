@@ -6,6 +6,34 @@
 
 namespace Rt
 {
+    Raytracer::Raytracer(unsigned int seed)
+        : RngEngine{seed}
+    {
+    }
+
+    void Raytracer::RunBitmap(Bitmap::BitmapD &output)
+    {
+        // Camera rays
+        Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
+        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+        {
+            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+            {
+                // first ray comes from cam
+                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
+
+                // Let ray bounce around and determine the color
+                auto const raymarch = MarchRay(ray);
+
+                // apply color filters on the emmision spectrum
+                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+
+                // paint pixel with object color into *image space*
+                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
+            }
+        }
+    }
+
     Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, unsigned int const recursionDepth)
     {
         // see if ray intersects any object
@@ -120,26 +148,4 @@ namespace Rt
         return std::uniform_real_distribution<double>{}(RngEngine);
     }
 
-    void Raytracer::RunBitmap(Bitmap::BitmapD &output)
-    {
-        // Camera rays
-        Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
-        {
-            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
-            {
-                // first ray comes from cam
-                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
-
-                // Let ray bounce around and determine the color
-                auto const raymarch = MarchRay(ray);
-
-                // apply color filters on the emmision spectrum
-                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
-
-                // paint pixel with object color into *image space*
-                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
-            }
-        }
-    }
 }

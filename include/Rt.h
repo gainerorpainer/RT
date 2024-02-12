@@ -14,8 +14,14 @@ namespace Rt
 
     class Raytracer
     {
+
+    public:
+        Raytracer(unsigned int seed = 1u);
+
+        void RunBitmap(Bitmap::BitmapD &output);
+
     private:
-        std::default_random_engine RngEngine{};
+        std::default_random_engine RngEngine;
 
         struct RayMarchResult
         {
@@ -25,9 +31,6 @@ namespace Rt
 
         double RandDouble();
         RayMarchResult MarchRay(Line const &ray, unsigned int const recursionDepth = 0);
-
-    public:
-        void RunBitmap(Bitmap::BitmapD & output);
     };
 
 }

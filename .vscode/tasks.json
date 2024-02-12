@@ -2,6 +2,13 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Start Runner",
+      "type": "shell",
+      "command": ".\\run.ps1",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
       "type": "cppbuild",
       "label": "DLL (Release)",
       "command": "g++",
@@ -18,12 +25,14 @@
         "-shared",
         "-Wl,--subsystem,windows",
         "-Ofast",
-        "-flto",
+        "-flto"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "group": "build",
       "detail": "compiler: g++"
     },
@@ -45,7 +54,9 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "group": "build",
       "detail": "compiler: g++"
     },
@@ -63,12 +74,14 @@
         "-o",
         "${workspaceFolder}\\rt.exe",
         "-DNDEBUG",
-        "-Ofast",
+        "-Ofast"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "group": "build",
       "detail": "compiler: g++"
     }

@@ -16,6 +16,13 @@ constexpr bool USE_PARALLEL = true;
 constexpr bool USE_PARALLEL = false;
 #endif
 
+void Sidethread(std::shared_ptr<Bitmap::BitmapD> bitmap)
+{
+    unsigned int const rngSeed = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    auto raytracer = Rt::Raytracer{rngSeed};
+    raytracer.RunBitmap(*bitmap);
+}
+
 // exe entry point
 int main()
 {
@@ -28,6 +35,7 @@ int main()
     }
     else
     {
+        // sidethread handling
         const unsigned int workerCount = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
         std::vector<std::shared_ptr<Bitmap::BitmapD>> workerResults;
         std::vector<std::thread> sidethreads;
@@ -37,19 +45,13 @@ int main()
             workerResults.push_back(std::make_shared<Bitmap::BitmapD>());
 
             // run as sidethread
-            sidethreads.emplace_back([](std::shared_ptr<Bitmap::BitmapD> bitmap)
-                                     {
-                                    auto raytracer = Rt::Raytracer{};
-                                    raytracer.RunBitmap(*bitmap); },
-                                     workerResults.back());
+            sidethreads.emplace_back(Sidethread, workerResults.back());
         }
-
         for (auto &thread : sidethreads)
             thread.join();
 
-        std::cout << "Averaging..." << std::endl;
-
         // average all results
+        std::cout << "Averaging..." << std::endl;
         for (auto const &piece : workerResults)
         {
             for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
