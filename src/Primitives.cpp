@@ -1,5 +1,7 @@
 #include "Primitives.h"
 
+#include "Debug.h"
+
 namespace Primitives
 {
     Vec3d::Vec3d(double x, double y, double z)
@@ -49,6 +51,13 @@ namespace Primitives
         return Vec3d{X * other.X,
                      Y * other.Y,
                      Z * other.Z};
+    }
+
+    double Vec3d::AngleTo(const Vec3d &other) const
+    {
+        DEBUG_ASSERT(AlmostSame(other.GetNorm(), 1.0), "Vector argument not normalized");
+
+        return acos(*this * other);
     }
 
     double Vec3d::operator*(const Vec3d &righthand) const

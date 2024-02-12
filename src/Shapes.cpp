@@ -1,24 +1,18 @@
 #include "Shapes.h"
 
+#include "Debug.h"
+
 namespace Shapes
 {
-    bool AlmostSame(double a, double b)
+    double signOf(double val)
     {
-        return abs(a - b) <= 1e-10;
+        if (val > 0)
+            return 1.0;
+        else
+            return -1.0;
     }
 
-    MaterialInfo MaterialInfo::MakeAbsorbing(Color_t const &visibleColor, double diffusionFactor)
-    {
-        ColorD_t const filter = {(double)visibleColor[0] / 255.0, (double)visibleColor[1] / 255.0, (double)visibleColor[2] / 255.0};
-        return MaterialInfo{.IsLightsource = false, .Emission = {}, .ColorFilter = filter, .DiffusionFactor = diffusionFactor};
-    }
-
-    MaterialInfo MaterialInfo::MakeEmitting(Color_t const &emission)
-    {
-        return MaterialInfo{.IsLightsource = true, .Emission = emission, .ColorFilter = {}};
-    }
-
-    Shape::Shape(std::string const &label, MaterialInfo const &material)
+    Shape::Shape(std::string const &label, Materials::Material const &material)
         : Label{label}, Material{material}
     {
     }
@@ -27,25 +21,25 @@ namespace Shapes
     {
         // https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
         Vec3d const reflectionDirection = direction - 2.0 * (direction * normal) * normal;
-        assert(AlmostSame(reflectionDirection.GetNorm(), 1.0));
+        DEBUG_ASSERT(AlmostSame(reflectionDirection.GetNorm(), 1.0), "Reflection did not yield normalized vector");
 
         return reflectionDirection;
     }
 
-    Sphere::Sphere(std::string const &label, MaterialInfo const &material, Vec3d center, double radius)
+    Sphere::Sphere(std::string const &label, Materials::Material const &material, Vec3d center, double radius)
         : Shape(label, material), Centerpoint{center}, Radius{radius}
     {
     }
 
     std::optional<HitEvent> Sphere::CheckHit(Line const &line) const
     {
-        assert(AlmostSame(line.Direction.GetNorm(), 1.0));
+        DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
 
         // https://gamedev.stackexchange.com/a/96487
 
-        Vec3d const connectionLine = line.Origin - Centerpoint;
-        double const b = connectionLine * line.Direction;
-        double const c = connectionLine * connectionLine - Radius * Radius;
+        Vec3d const directionBetween = line.Origin - Centerpoint;
+        double const b = directionBetween * line.Direction;
+        double const c = directionBetween * directionBetween - Radius * Radius;
 
         // ray is outside of sphere and pointing away from sphere
         if (c > 0 && b > 0)
@@ -57,12 +51,15 @@ namespace Shapes
         if (discriminant < 0)
             return std::nullopt;
 
-        // calc parameter t on r = line.Origin + line.Direction * t
+        // calc parameter t on r = line.Origin + line.Direction * t, always taking the shortest
+        // https://www.shadertoy.com/view/4d2XWV
+        //double const distance = -b - signOf(c) * sqrt(discriminant);
         double const distance = abs(-b - sqrt(discriminant));
 
         // intersection point
         // offset a little from hitpoint to avoid collision with this shape on next iteration
         // (this should not be done if collision is disabled for this shape on next iteration)
+        // Vec3d const intersectionPoint = line.Origin + (0.999 * distance) * line.Direction;
         Vec3d const intersectionPoint = line.Origin + (distance - 0.001) * line.Direction;
 
         // calc intersection normal
@@ -74,7 +71,7 @@ namespace Shapes
                         .ReflectedRay = Line{intersectionPoint, reflectionDirection}};
     }
 
-    Plane::Plane(std::string const &label, MaterialInfo const &material, Vec3d pin, Vec3d planeNormal)
+    Plane::Plane(std::string const &label, Materials::Material const &material, Vec3d pin, Vec3d planeNormal)
         // make ctor more accessible by always normalizing normal vector
         : Shape(label, material), Pin{pin}, Normal{planeNormal.ToNormalized()}
     {
@@ -82,6 +79,8 @@ namespace Shapes
 
     std::optional<HitEvent> Plane::CheckHit(Line const &line) const
     {
+        DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
+
         double const numerator = (Pin - line.Origin) * Normal;
         double const denominator = line.Direction * Normal;
         // parallel?

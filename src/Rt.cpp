@@ -75,7 +75,7 @@ namespace Rt
             return RayMarchResult{};
         }
 
-        Shapes::MaterialInfo const &material = nearest->Shape->Material;
+        Materials::Material const &material = nearest->Shape->Material;
 
         // check if light source was hit
         if (material.IsLightsource)
@@ -99,7 +99,12 @@ namespace Rt
                 double LambertianFactor;
             };
             std::array<rayProbe_t, DIFFUSE_RAYS> rayProbes = {};
-            if (material.DiffusionFactor == 0)
+
+            // total reflection: Material then acts like a perfect mirror
+            double const angleOfIncidence = abs(ray.Direction.AngleTo(nearest->Hitevent.SurfaceNormal));
+            bool const isTotallyReflected = angleOfIncidence < material.CriticalAngle;
+
+            if ((material.DiffusionFactor == 0) || isTotallyReflected)
             {
                 // perfect mirror will only spawn single ray
                 rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), 1};

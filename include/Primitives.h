@@ -58,6 +58,12 @@ namespace Primitives
         /// @return Elementwise mulitplied vector
         Vec3d MultiplyElementwise(const Vec3d &other) const;
 
+
+        /// @brief Calculates the angle between this and another normalized vector
+        /// @param other Normalized vector
+        /// @return The angle between this and the other vector
+        double AngleTo(const Vec3d & other) const;
+
         /// @brief DOTPRODUCT
         /// @param righthand
         /// @return Elementwise multiplication and summation

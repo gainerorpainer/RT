@@ -8,12 +8,16 @@
 
 #include "Rt.h"
 #include "ImgFile.h"
+#include "TESTS.h"
 
 #ifdef NDEBUG
 // optimize through parallel threads
 constexpr bool USE_PARALLEL = true;
+// skip tests
+constexpr bool DO_TESTS = false;
 #else
 constexpr bool USE_PARALLEL = false;
+constexpr bool DO_TESTS = false;
 #endif
 
 void Sidethread(std::shared_ptr<Bitmap::BitmapD> bitmap)
@@ -26,6 +30,12 @@ void Sidethread(std::shared_ptr<Bitmap::BitmapD> bitmap)
 // exe entry point
 int main()
 {
+    if (DO_TESTS)
+    {
+        std::cout << "Tests..." << std::endl;
+        Tests::RunTests();
+    }
+
     std::cout << "Raytracing..." << std::endl;
     std::unique_ptr<Bitmap::BitmapD> resultBuffer{new Bitmap::BitmapD{}};
     if (!USE_PARALLEL)
