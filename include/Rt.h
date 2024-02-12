@@ -10,7 +10,7 @@
 namespace Rt
 {
     constexpr unsigned int BOUNCE_ITERATIONS = 4;
-    constexpr unsigned int DIFFUSE_RAYS = 4;
+    constexpr unsigned int DIFFUSE_RAYS = 5;
 
     class Raytracer
     {

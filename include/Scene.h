@@ -14,7 +14,7 @@ namespace Scene
                   {-100, 100, 100},
                   {2, -1, -1}},
         new Sphere{"Skysphere",
-                   Materials::Material{}.MakeAbsorbing({50, 100, 255}),
+                   Materials::Material{}.MakeAbsorbing({50, 100, 255}).MakeDiffuse(1),
                    {0, 0, 0},
                    1000},
         new Plane{"Floor",
@@ -22,11 +22,11 @@ namespace Scene
                   {0, 0, 0},
                   {0, 0, 1}},
         new Sphere{"Red Sphere",
-                   Materials::Material{}.MakeAbsorbing({230, 100, 100}).MakeDiffuse(0.5),
+                   Materials::Material{}.MakeAbsorbing({230, 100, 100}),
                    {3, -1, 1},
                    1},
         new Sphere{"Blue Sphere",
-                   Materials::Material{}.MakeAbsorbing({25, 25, 230}).MakeTotallyReflecting(Deg2Rad(15)),
+                   Materials::Material{}.MakeAbsorbing({25, 25, 230}),
                    {4, 1, 1.5},
                    1.5}};
 }

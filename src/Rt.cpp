@@ -104,25 +104,30 @@ namespace Rt
             double const angleOfIncidence = abs(ray.Direction.AngleTo(nearest->Hitevent.SurfaceNormal));
             bool const isTotallyReflected = angleOfIncidence < material.CriticalAngle;
 
-            if ((material.DiffusionFactor == 0) || isTotallyReflected)
+            // perfect mirror will only spawn single ray
+            rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), (1.0 - material.DiffusionFactor)};
+
+            if ((material.DiffusionFactor > 0) && (!isTotallyReflected))
             {
-                // perfect mirror will only spawn single ray
-                rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), 1};
-            }
-            else
-            {
+                // Start from surface normal
+                Line probingRay{nearest->Hitevent.ReflectedRay.Origin, nearest->Hitevent.SurfaceNormal};
+
                 // spawn random rays
-                for (size_t j = 0; j < DIFFUSE_RAYS; j++)
+                for (size_t j = 1; j < DIFFUSE_RAYS - 1; j++)
                 {
-                    // TODO: better way for random rays
-                    Line randomRay{nearest->Hitevent.ReflectedRay};
-                    randomRay.Direction = (randomRay.Direction + Vec3d{RandDouble(), RandDouble(), RandDouble()}).ToNormalized();
+                    // rotate away from surface normal in the plane (surface normal) x (reflection)
+                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest->Hitevent.SurfaceNormal, nearest->Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));
+
+                    // start rotating about the normal in appropriate steps
+                    probingRay.Direction = probingRay.Direction.RotateAboutAxis(nearest->Hitevent.SurfaceNormal, RandDouble() * Deg2Rad(360));
+
+                    DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
 
                     rayProbes[j] = rayProbe_t{
                         // recursively march
-                        MarchRay(randomRay, recursionDepth + 1),
-                        // both have norm = 1
-                        abs(ray.Direction * randomRay.Direction)};
+                        MarchRay(probingRay, recursionDepth + 1),
+                        // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
+                        abs(nearest->Hitevent.SurfaceNormal * probingRay.Direction)};
                 }
             }
 
@@ -138,10 +143,10 @@ namespace Rt
             }
         }
 
-        // apply lambertian law from this hit
-        double const lambertianFactor = abs(nearest->Hitevent.SurfaceNormal * ray.Direction); // == 1 if parallel
-        colorFilterAccumulator = colorFilterAccumulator * lambertianFactor;
-        emissionAccumulator = emissionAccumulator * lambertianFactor;
+        // // apply lambertian law from this hit
+        // double const lambertianFactor = abs(nearest->Hitevent.SurfaceNormal * ray.Direction); // == 1 if parallel
+        // colorFilterAccumulator = colorFilterAccumulator * lambertianFactor;
+        // emissionAccumulator = emissionAccumulator * lambertianFactor;
 
         // merge with material of hit shape
         RayMarchResult const result{.ColorFilters = colorFilterAccumulator.MultiplyElementwise(material.ColorFilter), .Emissions = emissionAccumulator + material.Emission};

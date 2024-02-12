@@ -53,6 +53,33 @@ namespace Primitives
                      Z * other.Z};
     }
 
+    Vec3d Vec3d::CrossProd(const Vec3d &other) const
+    {
+        return Vec3d{
+            Y * other.Z - Z * other.Y,
+            Z * other.X - X * other.Z,
+            X * other.Y - Y * other.X,
+        };
+    }
+
+    Vec3d Vec3d::RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const
+    {
+        // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+
+        // construct "k":
+        Vec3d const k = planeV1.CrossProd(planeV2).ToNormalized();
+
+        // use rodrigues formula
+        return RotateAboutAxis(k, angle);
+    }
+
+    Vec3d Vec3d::RotateAboutAxis(const Vec3d &axis, double angle) const
+    {
+        // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+        // use rodrigues formula
+        return *this * cos(angle) + (axis.CrossProd(*this)) * sin(angle) + axis * (axis * *this) * (1 - cos(angle));
+    }
+
     double Vec3d::AngleTo(const Vec3d &other) const
     {
         DEBUG_ASSERT(AlmostSame(other.GetNorm(), 1.0), "Vector argument not normalized");

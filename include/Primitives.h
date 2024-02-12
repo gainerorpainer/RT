@@ -58,11 +58,29 @@ namespace Primitives
         /// @return Elementwise mulitplied vector
         Vec3d MultiplyElementwise(const Vec3d &other) const;
 
+        /// @brief Calculates the crossproduct (this) x (other)
+        /// @param other another vector
+        /// @return Cross product
+        Vec3d CrossProd(const Vec3d &other) const;
+
+        /// @brief Applies a somewhat slow rotation within a plane given by two vector
+        /// @param planeV1 first plane vector
+        /// @param planeV2 second plane vector
+        /// @param angle Angle to rotate about (from planeV1 towards planeV2)
+        /// @return This rotated vector
+        Vec3d RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const;
+
+        /// @brief Applies a somewhat slow rotation about an axis
+        /// @param axis Axis of rotation
+        /// @param angle Angle of rotation (right hand rule)
+        /// @return This rotated vector
+        Vec3d RotateAboutAxis(const Vec3d &axis, double angle) const;
 
         /// @brief Calculates the angle between this and another normalized vector
         /// @param other Normalized vector
         /// @return The angle between this and the other vector
-        double AngleTo(const Vec3d & other) const;
+        double
+        AngleTo(const Vec3d &other) const;
 
         /// @brief DOTPRODUCT
         /// @param righthand
