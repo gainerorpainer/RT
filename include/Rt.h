@@ -30,7 +30,7 @@ namespace Rt
         };
 
         double RandDouble();
-        RayMarchResult MarchRay(Line const &ray, unsigned int const recursionDepth = 0);
+        RayMarchResult MarchRay(Line const &ray, Shapes::Shape const *disabledCollision = nullptr, unsigned int const recursionDepth = 0);
     };
 
 }

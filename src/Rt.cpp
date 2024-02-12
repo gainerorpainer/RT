@@ -34,7 +34,7 @@ namespace Rt
         }
     }
 
-    Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, unsigned int const recursionDepth)
+    Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, Shapes::Shape const *disabledCollision, unsigned int const recursionDepth)
     {
         // see if ray intersects any object
         struct rayIntersection_t
@@ -46,6 +46,10 @@ namespace Rt
         for (unsigned int i = 0; i < Scene::Objects.size(); i++)
         {
             Shapes::Shape const *shape = Scene::Objects[i];
+
+            if (shape == disabledCollision)
+                continue;
+
             auto hitevent = shape->CheckHit(ray);
             if (!hitevent)
                 continue;
@@ -105,7 +109,7 @@ namespace Rt
             bool const isTotallyReflected = angleOfIncidence < material.CriticalAngle;
 
             // perfect mirror will only spawn single ray
-            rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, recursionDepth + 1), (1.0 - material.DiffusionFactor)};
+            rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, nearest->Shape, recursionDepth + 1), (1.0 - material.DiffusionFactor)};
 
             if ((material.DiffusionFactor > 0) && (!isTotallyReflected))
             {
@@ -125,7 +129,7 @@ namespace Rt
 
                     rayProbes[j] = rayProbe_t{
                         // recursively march
-                        MarchRay(probingRay, recursionDepth + 1),
+                        MarchRay(probingRay, nearest->Shape, recursionDepth + 1),
                         // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
                         abs(nearest->Hitevent.SurfaceNormal * probingRay.Direction)};
                 }

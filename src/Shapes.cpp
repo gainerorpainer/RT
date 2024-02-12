@@ -53,14 +53,11 @@ namespace Shapes
 
         // calc parameter t on r = line.Origin + line.Direction * t, always taking the shortest
         // https://www.shadertoy.com/view/4d2XWV
-        //double const distance = -b - signOf(c) * sqrt(discriminant);
+        // double const distance = -b - signOf(c) * sqrt(discriminant);
         double const distance = abs(-b - sqrt(discriminant));
 
         // intersection point
-        // offset a little from hitpoint to avoid collision with this shape on next iteration
-        // (this should not be done if collision is disabled for this shape on next iteration)
-        // Vec3d const intersectionPoint = line.Origin + (0.999 * distance) * line.Direction;
-        Vec3d const intersectionPoint = line.Origin + (distance - 0.001) * line.Direction;
+        Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
 
         // calc intersection normal
         Vec3d const normal = (intersectionPoint - Centerpoint).ToNormalized();
