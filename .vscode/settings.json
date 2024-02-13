@@ -52,6 +52,8 @@
         "ratio": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "map": "cpp",
+        "csignal": "cpp"
     }
 }

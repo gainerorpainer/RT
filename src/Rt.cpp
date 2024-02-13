@@ -1,6 +1,7 @@
 #include "Rt.h"
 
 #include <algorithm>
+#include <thread>
 
 #include "Debug.h"
 
@@ -13,7 +14,6 @@ namespace Rt
 
     void Raytracer::RunBitmap(Bitmap::BitmapD &output)
     {
-        // Camera rays
         Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
         for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
         {
@@ -32,6 +32,46 @@ namespace Rt
                 std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
             }
         }
+    }
+
+    void Raytracer::RunBitmapParallel(Bitmap::BitmapD &output, unsigned int const numSidethreads)
+    {
+        // spawn threads
+        std::vector<std::thread> sidethreads;
+        size_t argFromY = 0;
+        size_t const yStep = (size_t)ceil((double)Bitmap::BITMAP_HEIGHT / (double)numSidethreads);
+        for (size_t i = 0; i < numSidethreads; i++)
+        {
+            size_t const argToY = std::min((size_t)Bitmap::BITMAP_HEIGHT, argFromY + yStep);
+
+            // run as sidethread
+            sidethreads.emplace_back([this, &output](size_t fromY, size_t toY)
+                                     {
+                                        Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
+                                        for (size_t y = fromY; y < toY; y++)
+                                        {
+                                            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+                                            {
+                                                // first ray comes from cam
+                                                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
+
+                                                // Let ray bounce around and determine the color
+                                                auto const raymarch = MarchRay(ray);
+
+                                                // apply color filters on the emmision spectrum
+                                                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+
+                                                // paint pixel with object color into *image space*
+                                                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
+                                            }
+                                        } },
+                                     argFromY, argToY);
+            argFromY += yStep;
+        }
+
+        // wait for completion
+        for (auto &thread : sidethreads)
+            thread.join();
     }
 
     Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, Shapes::Shape const *disabledCollision, unsigned int const recursionDepth)
@@ -104,12 +144,17 @@ namespace Rt
             };
             std::array<rayProbe_t, DIFFUSE_RAYS> rayProbes = {};
 
-            // total reflection: Material then acts like a perfect mirror
-            double const angleOfIncidence = abs(ray.Direction.AngleTo(nearest->Hitevent.SurfaceNormal));
-            bool const isTotallyReflected = angleOfIncidence < material.CriticalAngle;
-
             // perfect mirror will only spawn single ray
             rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, nearest->Shape, recursionDepth + 1), (1.0 - material.DiffusionFactor)};
+
+            // total reflection: Material then acts like a perfect mirror
+            double const angleOfIncidence = abs(nearest->Hitevent.ReflectedRay.Direction.AngleTo(nearest->Hitevent.SurfaceNormal));
+            bool const isTotallyReflected = angleOfIncidence > material.CriticalAngle;
+
+            if (isTotallyReflected)
+            {
+                DEBUG_WARN("Total Reflection occured");
+            }
 
             if ((material.DiffusionFactor > 0) && (!isTotallyReflected))
             {
@@ -146,11 +191,6 @@ namespace Rt
                 emissionAccumulator = emissionAccumulator + (rayProbes[j].LambertianFactor / weightSum) * Vec3d{rayProbes[j].ProbedResult.Emissions};
             }
         }
-
-        // // apply lambertian law from this hit
-        // double const lambertianFactor = abs(nearest->Hitevent.SurfaceNormal * ray.Direction); // == 1 if parallel
-        // colorFilterAccumulator = colorFilterAccumulator * lambertianFactor;
-        // emissionAccumulator = emissionAccumulator * lambertianFactor;
 
         // merge with material of hit shape
         RayMarchResult const result{.ColorFilters = colorFilterAccumulator.MultiplyElementwise(material.ColorFilter), .Emissions = emissionAccumulator + material.Emission};

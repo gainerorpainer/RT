@@ -17,14 +17,18 @@ constexpr bool USE_PARALLEL = true;
 constexpr bool DO_TESTS = false;
 #else
 constexpr bool USE_PARALLEL = false;
-constexpr bool DO_TESTS = false;
+constexpr bool DO_TESTS = true;
 #endif
+
+constexpr unsigned int NUM_SMOOTHING_PASSES = 4;
+
+const unsigned int AvailableWorkers = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
 void Sidethread(std::shared_ptr<Bitmap::BitmapD> bitmap)
 {
     unsigned int const rngSeed = std::hash<std::thread::id>{}(std::this_thread::get_id());
     auto raytracer = Rt::Raytracer{rngSeed};
-    raytracer.RunBitmap(*bitmap);
+    raytracer.RunBitmapParallel(*bitmap, AvailableWorkers / NUM_SMOOTHING_PASSES);
 }
 
 // exe entry point
@@ -46,10 +50,10 @@ int main()
     else
     {
         // sidethread handling
-        const unsigned int workerCount = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
+
         std::vector<std::shared_ptr<Bitmap::BitmapD>> workerResults;
         std::vector<std::thread> sidethreads;
-        for (size_t i = 0; i < workerCount; i++)
+        for (size_t i = 0; i < NUM_SMOOTHING_PASSES; i++)
         {
             // heap alloc bitmap
             workerResults.push_back(std::make_shared<Bitmap::BitmapD>());
@@ -70,7 +74,7 @@ int main()
                 {
                     for (size_t i = 0; i < 3; i++)
                     {
-                        resultBuffer->at(x, y, i) += piece->at(x, y, i) / (double)workerCount;
+                        resultBuffer->at(x, y, i) += piece->at(x, y, i) / (double)NUM_SMOOTHING_PASSES;
                     }
                 }
             }

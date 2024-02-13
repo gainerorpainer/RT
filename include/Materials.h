@@ -20,8 +20,8 @@ namespace Materials
         /// @brief How diffuse the material is, 0 is a perfect mirror, 1 is a fuzzy material
         double DiffusionFactor = 0;
 
-        /// @brief Indicent angle at which (lower than this value) total reflection occurs
-        double CriticalAngle = Deg2Rad(0);
+        /// @brief Indicent angle towards surface normal at which (higher than this value) total reflection occurs
+        double CriticalAngle = Deg2Rad(90);
 
         inline Material &MakeEmissive(Color_t emissionSpectrum)
         {

@@ -51,16 +51,20 @@ namespace Shapes
         if (discriminant < 0)
             return std::nullopt;
 
-        // calc parameter t on r = line.Origin + line.Direction * t, always taking the shortest
+        // calc parameter t on r = line.Origin + line.Direction * t, taking the solution that is within the line direction
         // https://www.shadertoy.com/view/4d2XWV
-        // double const distance = -b - signOf(c) * sqrt(discriminant);
-        double const distance = abs(-b - sqrt(discriminant));
+        double const distance = -b - signOf(c) * sqrt(discriminant);
+        // double const distance = abs(-b - sqrt(discriminant));
+
+        DEBUG_ASSERT(distance > 0, "Distance must be in the ray direction");
 
         // intersection point
         Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
 
+        DEBUG_ASSERT(AlmostSame((intersectionPoint - Centerpoint).GetNorm(), Radius), "Intersection is not on plane");
+
         // calc intersection normal
-        Vec3d const normal = (intersectionPoint - Centerpoint).ToNormalized();
+        Vec3d const normal = (c > 0 ? (intersectionPoint - Centerpoint) : (Centerpoint - intersectionPoint)).ToNormalized(); // takes into consideration when within sphere
         Vec3d const reflectionDirection = Reflect(line.Direction, normal);
 
         return HitEvent{.DistanceToSurface = distance,
@@ -94,9 +98,7 @@ namespace Shapes
 
         // Calc reflection ray
         Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
-        // offset a little from hitpoint to avoid collision with this shape on next iteration
-        // (this should not be done if collision is disabled for this shape on next iteration)
-        Vec3d const reflectionPoint = line.Origin + (distance - 0.001) * line.Direction;
+        Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
 
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = Normal,
