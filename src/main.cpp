@@ -11,16 +11,18 @@
 #include "TESTS.h"
 
 #ifdef NDEBUG
+// how many times to run with different RNG seed for averaging the images
+constexpr unsigned int NUM_SMOOTHING_PASSES = 2;
 // optimize through parallel threads
 constexpr bool USE_PARALLEL = true;
 // skip tests
 constexpr bool DO_TESTS = false;
 #else
-constexpr bool USE_PARALLEL = false;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
+constexpr bool USE_PARALLEL = true;
 constexpr bool DO_TESTS = true;
 #endif
 
-constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
 
 const unsigned int AvailableWorkers = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
@@ -50,7 +52,6 @@ int main()
     else
     {
         // sidethread handling
-
         std::vector<std::shared_ptr<Bitmap::BitmapD>> workerResults;
         std::vector<std::thread> sidethreads;
         for (size_t i = 0; i < NUM_SMOOTHING_PASSES; i++)
