@@ -20,7 +20,7 @@ constexpr bool USE_PARALLEL = false;
 constexpr bool DO_TESTS = true;
 #endif
 
-constexpr unsigned int NUM_SMOOTHING_PASSES = 4;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
 
 const unsigned int AvailableWorkers = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
