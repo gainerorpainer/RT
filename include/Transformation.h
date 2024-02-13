@@ -39,7 +39,7 @@ namespace Transformation
         /// @param x map x coord
         /// @param y map y coord
         /// @return The resulting vector pointing to the sphere point with length 1
-        Vec3d Transform(unsigned int x, unsigned int y) const
+        Vec3d Transform(unsigned int x, unsigned int y) const noexcept
         {
             double const longitude = (x - MapWidth / 2) * LongitudeStep;
             double const latitude = (y - MapHeight / 2) * LongitudeStep;

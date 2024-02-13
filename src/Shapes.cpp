@@ -31,7 +31,7 @@ namespace Shapes
     {
     }
 
-    std::optional<HitEvent> Sphere::CheckHit(Line const &line) const
+    std::optional<HitEvent> Sphere::CheckHit(Line const &line) const noexcept
     {
         DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
 
@@ -78,7 +78,7 @@ namespace Shapes
     {
     }
 
-    std::optional<HitEvent> Plane::CheckHit(Line const &line) const
+    std::optional<HitEvent> Plane::CheckHit(Line const &line) const noexcept
     {
         DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
 

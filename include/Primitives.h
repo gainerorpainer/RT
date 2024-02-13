@@ -43,72 +43,72 @@ namespace Primitives
         void operator=(Vec3d const &other);
 
         template <typename T>
-        std::array<T, 3> Cast() const;
+        std::array<T, 3> Cast() const noexcept;
 
         /// @brief Compute norm (length) of vector
         /// @return The norm (length)
-        double GetNorm() const;
+        double GetNorm() const noexcept;
 
         /// @brief Compute normalized version of this vector
         /// @return This vector scaled to length 1
-        Vec3d ToNormalized() const;
+        Vec3d ToNormalized() const noexcept;
 
         /// @brief Multiplies X with X, Y with Y, etc
         /// @param other another vector
         /// @return Elementwise mulitplied vector
-        Vec3d MultiplyElementwise(const Vec3d &other) const;
+        Vec3d MultiplyElementwise(const Vec3d &other) const noexcept;
 
         /// @brief Calculates the crossproduct (this) x (other)
         /// @param other another vector
         /// @return Cross product
-        Vec3d CrossProd(const Vec3d &other) const;
+        Vec3d CrossProd(const Vec3d &other) const noexcept;
 
         /// @brief Applies a somewhat slow rotation within a plane given by two vector
         /// @param planeV1 first plane vector
         /// @param planeV2 second plane vector
         /// @param angle Angle to rotate about (from planeV1 towards planeV2)
         /// @return This rotated vector
-        Vec3d RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const;
+        Vec3d RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const noexcept;
 
         /// @brief Applies a somewhat slow rotation about an axis
         /// @param axis Axis of rotation
         /// @param angle Angle of rotation (right hand rule)
         /// @return This rotated vector
-        Vec3d RotateAboutAxis(const Vec3d &axis, double angle) const;
+        Vec3d RotateAboutAxis(const Vec3d &axis, double angle) const noexcept;
 
         /// @brief Calculates the angle between this and another normalized vector
         /// @param other Normalized vector
         /// @return The angle between this and the other vector
         double
-        AngleTo(const Vec3d &other) const;
+        AngleTo(const Vec3d &other) const noexcept;
 
         /// @brief DOTPRODUCT
         /// @param righthand
         /// @return Elementwise multiplication and summation
-        double operator*(const Vec3d &righthand) const;
+        double operator*(const Vec3d &righthand) const noexcept;
 
         /// @brief Scalar multiply
         /// @param righthand scalar
         /// @return Scaled vector
-        Vec3d operator*(const double righthand) const;
+        Vec3d operator*(const double righthand) const noexcept;
 
         /// @brief PLUS
         /// @param righthand
         /// @return Elementwise plus
-        Vec3d operator+(const Vec3d &righthand) const;
+        Vec3d operator+(const Vec3d &righthand) const noexcept;
 
         /// @brief Inversion
         /// @return negative vector
-        Vec3d operator-() const;
+        Vec3d operator-() const noexcept;
 
         /// @brief MINUS
         /// @param righthand
         /// @return Elementwise minus
-        Vec3d operator-(const Vec3d &righthand) const;
+        Vec3d operator-(const Vec3d &righthand) const noexcept;
     };
 
     template <typename T>
-    inline std::array<T, 3> Vec3d::Cast() const
+    inline std::array<T, 3> Vec3d::Cast() const noexcept
     {
         return std::array<T, 3>{(T)Data[0], (T)Data[1], (T)Data[2]};
     }

@@ -20,7 +20,7 @@ namespace Rt
 
         void RunBitmap(Bitmap::BitmapD &output);
 
-        void RunBitmapParallel(Bitmap::BitmapD &output, unsigned int numSidethreads);
+        void RunBitmapParallel(Bitmap::BitmapD &output, unsigned int availableCpuCores);
 
     private:
         std::default_random_engine RngEngine;

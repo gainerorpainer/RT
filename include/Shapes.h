@@ -23,7 +23,7 @@ namespace Shapes
         std::string Label;
         Materials::Material Material;
 
-        virtual std::optional<HitEvent> CheckHit(Line const &line) const = 0;
+        virtual std::optional<HitEvent> CheckHit(Line const &line) const noexcept = 0;
 
     protected:
         Shape(std::string const &label, Materials::Material const &material);
@@ -38,7 +38,7 @@ namespace Shapes
 
         Sphere(std::string const &label, Materials::Material const &material, Vec3d center, double radius);
 
-        std::optional<HitEvent> CheckHit(Line const &line) const override;
+        std::optional<HitEvent> CheckHit(Line const &line) const noexcept override;
     };
 
     struct Plane : public Shape
@@ -48,6 +48,6 @@ namespace Shapes
 
         Plane(std::string const &label, Materials::Material const &material, Vec3d pin, Vec3d planeNormal);
 
-        std::optional<HitEvent> CheckHit(Line const &line) const;
+        std::optional<HitEvent> CheckHit(Line const &line) const noexcept;
     };
 }

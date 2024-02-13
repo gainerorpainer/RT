@@ -69,9 +69,9 @@ int main()
         std::cout << "Averaging..." << std::endl;
         for (auto const &piece : workerResults)
         {
-            for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+            for (size_t y = 0; y < Bitmap::STD_BITMAP_HEIGHT; y++)
             {
-                for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+                for (size_t x = 0; x < Bitmap::STD_BITMAP_WIDTH; x++)
                 {
                     for (size_t i = 0; i < 3; i++)
                     {

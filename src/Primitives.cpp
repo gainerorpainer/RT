@@ -36,24 +36,24 @@ namespace Primitives
         std::copy(other.Data.begin(), other.Data.end(), Data.begin());
     }
 
-    double Vec3d::GetNorm() const
+    double Vec3d::GetNorm() const noexcept
     {
         return sqrt(X * X + Y * Y + Z * Z);
     }
 
-    Vec3d Vec3d::ToNormalized() const
+    Vec3d Vec3d::ToNormalized() const noexcept
     {
         return *this * (1.0 / GetNorm());
     }
 
-    Vec3d Vec3d::MultiplyElementwise(const Vec3d &other) const
+    Vec3d Vec3d::MultiplyElementwise(const Vec3d &other) const noexcept
     {
         return Vec3d{X * other.X,
                      Y * other.Y,
                      Z * other.Z};
     }
 
-    Vec3d Vec3d::CrossProd(const Vec3d &other) const
+    Vec3d Vec3d::CrossProd(const Vec3d &other) const noexcept
     {
         return Vec3d{
             Y * other.Z - Z * other.Y,
@@ -62,7 +62,7 @@ namespace Primitives
         };
     }
 
-    Vec3d Vec3d::RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const
+    Vec3d Vec3d::RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const noexcept
     {
         // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 
@@ -73,45 +73,45 @@ namespace Primitives
         return RotateAboutAxis(k, angle);
     }
 
-    Vec3d Vec3d::RotateAboutAxis(const Vec3d &axis, double angle) const
+    Vec3d Vec3d::RotateAboutAxis(const Vec3d &axis, double angle) const noexcept
     {
         // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
         // use rodrigues formula
         return *this * cos(angle) + (axis.CrossProd(*this)) * sin(angle) + axis * (axis * *this) * (1 - cos(angle));
     }
 
-    double Vec3d::AngleTo(const Vec3d &other) const
+    double Vec3d::AngleTo(const Vec3d &other) const noexcept
     {
         DEBUG_ASSERT(AlmostSame(other.GetNorm(), 1.0), "Vector argument not normalized");
 
         return acos(*this * other);
     }
 
-    double Vec3d::operator*(const Vec3d &righthand) const
+    double Vec3d::operator*(const Vec3d &righthand) const noexcept
     {
         return X * righthand.X +
                Y * righthand.Y +
                Z * righthand.Z;
     }
 
-    Vec3d Vec3d::operator*(const double righthand) const
+    Vec3d Vec3d::operator*(const double righthand) const noexcept
     {
         return Vec3d{X * righthand, Y * righthand, Z * righthand};
     }
 
-    Vec3d Vec3d::operator+(const Vec3d &righthand) const
+    Vec3d Vec3d::operator+(const Vec3d &righthand) const noexcept
     {
         return Vec3d{X + righthand.X,
                      Y + righthand.Y,
                      Z + righthand.Z};
     }
 
-    Vec3d Vec3d::operator-() const
+    Vec3d Vec3d::operator-() const noexcept
     {
         return Vec3d{-X, -Y, -Z};
     }
 
-    Vec3d Vec3d::operator-(const Vec3d &righthand) const
+    Vec3d Vec3d::operator-(const Vec3d &righthand) const noexcept
     {
         return *this + (-righthand);
     }

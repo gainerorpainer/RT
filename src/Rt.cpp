@@ -15,10 +15,10 @@ namespace Rt
 
     void Raytracer::RunBitmap(Bitmap::BitmapD &output)
     {
-        Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
-        for (size_t y = 0; y < Bitmap::BITMAP_HEIGHT; y++)
+        Transformation::Map2Sphere const cameraTransformation{Bitmap::STD_BITMAP_WIDTH, Bitmap::STD_BITMAP_HEIGHT, Camera::FOV};
+        for (size_t y = 0; y < Bitmap::STD_BITMAP_HEIGHT; y++)
         {
-            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+            for (size_t x = 0; x < Bitmap::STD_BITMAP_WIDTH; x++)
             {
                 // first ray comes from cam
                 Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
@@ -35,35 +35,36 @@ namespace Rt
         }
     }
 
-    void Raytracer::RunBitmapParallel(Bitmap::BitmapD &output, unsigned int numSidethreads)
+    void Raytracer::RunBitmapParallel(Bitmap::BitmapD &output, unsigned int availableCpuCores)
     {
+
+        unsigned int const numSidethreads = std::max((unsigned int)(sizeof(output) / (1024ULL * 1024ULL)), availableCpuCores);
+
         // spawn threads
         std::vector<std::thread> sidethreads;
         size_t argFromY = 0;
-        size_t const yStep = (size_t)ceil((double)Bitmap::BITMAP_HEIGHT / (double)numSidethreads);
+        size_t const yStep = (size_t)ceil((double)Bitmap::STD_BITMAP_HEIGHT / (double)numSidethreads);
         for (size_t i = 0; i < numSidethreads; i++)
         {
-            size_t const argToY = std::min((size_t)Bitmap::BITMAP_HEIGHT, argFromY + yStep);
+            size_t const argToY = std::min((size_t)Bitmap::STD_BITMAP_HEIGHT, argFromY + yStep);
 
             // run as sidethread
             sidethreads.emplace_back([this, &output](size_t fromY, size_t toY)
                                      {
-                                        Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
+                                        Transformation::Map2Sphere const cameraTransformation{Bitmap::STD_BITMAP_WIDTH, Bitmap::STD_BITMAP_HEIGHT, Camera::FOV};
                                         for (size_t y = fromY; y < toY; y++)
                                         {
-                                            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
+                                            for (size_t x = 0; x < Bitmap::STD_BITMAP_WIDTH; x++)
                                             {
                                                 // first ray comes from cam
-                                                Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
-
                                                 // Let ray bounce around and determine the color
-                                                auto const raymarch = MarchRay(ray);
+                                                auto const raymarch = MarchRay(Line{Camera::Origin, cameraTransformation.Transform(x, y)});
 
                                                 // apply color filters on the emmision spectrum
-                                                Color_t const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters).Cast<unsigned char>();
+                                                auto const pixelcolor = raymarch.Emissions.MultiplyElementwise(raymarch.ColorFilters);
 
                                                 // paint pixel with object color into *image space*
-                                                std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
+                                                std::copy(pixelcolor.Data.begin(), pixelcolor.Data.end(), output.atPixel(x, y));
                                             }
                                         } },
                                      argFromY, argToY);
@@ -201,5 +202,4 @@ namespace Rt
     {
         return std::uniform_real_distribution<double>{}(RngEngine);
     }
-
 }
