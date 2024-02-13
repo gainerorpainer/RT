@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <thread>
+#include <cmath>
 
 #include "Debug.h"
 
@@ -148,19 +149,18 @@ namespace Rt
             };
             std::array<rayProbe_t, DIFFUSE_RAYS> rayProbes = {};
 
-            // perfect mirror will only spawn single ray
-            rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, nearest->Shape, recursionDepth + 1), (1.0 - material.DiffusionFactor)};
-
             // total reflection: Material then acts like a perfect mirror
             double const angleOfIncidence = abs(nearest->Hitevent.ReflectedRay.Direction.AngleTo(nearest->Hitevent.SurfaceNormal));
-            bool const isTotallyReflected = angleOfIncidence > material.CriticalAngle;
+            // lerp between diffusion factor and 0 between the range critical angle .. 90°
+            double const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
+                                                                                             : std::lerp(material.DiffusionFactor, 0.0, (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
 
-            if (isTotallyReflected)
-            {
-                DEBUG_WARN("Total Reflection occured");
-            }
+            DEBUG_BREAKIF(apparentDiffusionFactor < material.DiffusionFactor);
 
-            if ((material.DiffusionFactor > 0) && (!isTotallyReflected))
+            // perfect mirror will only spawn single ray
+            rayProbes[0] = rayProbe_t{MarchRay(nearest->Hitevent.ReflectedRay, nearest->Shape, recursionDepth + 1), (1.0 - apparentDiffusionFactor)};
+
+            if (apparentDiffusionFactor > 0)
             {
                 // Start from surface normal
                 Line probingRay{nearest->Hitevent.ReflectedRay.Origin, nearest->Hitevent.SurfaceNormal};
@@ -180,7 +180,7 @@ namespace Rt
                         // recursively march
                         MarchRay(probingRay, nearest->Shape, recursionDepth + 1),
                         // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
-                        abs(nearest->Hitevent.SurfaceNormal * probingRay.Direction)};
+                        abs(nearest->Hitevent.ReflectedRay.Direction * probingRay.Direction)};
                 }
             }
 

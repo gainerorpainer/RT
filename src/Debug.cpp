@@ -31,35 +31,43 @@ namespace Debug
     void _assert(bool condition, std::string const &message, std::string const &file, int line)
     {
     }
+    void _breakif(bool condition)
+    {
+    }
 #else
-    /// @brief INTERNAL DO NOT USE
     void _warn(std::string const &message, std::string const &file, int line)
     {
         unsigned int const occurenceCounter = IncrementCounter(file, line);
-        
+
         // Show only every 2nd, 4th, 8th, 16th occurence etc
         if (occurenceCounter > 2 && !isPowerOfTwo(occurenceCounter))
             return;
 
         std::cout << "WARNING: In " << file << ":" << line << " (#" << occurenceCounter << ") - " << message << std::endl;
     }
-    /// @brief INTERNAL DO NOT USE
     void _crash(std::string const &message, std::string const &file, int line)
     {
         // try to alert debugger
-        __debugbreak;
-        std::raise(SIGABRT);
+        _breakif(true);
 
         std::cerr << "ERROR: In " << file << ":" << line << " - " << message << std::endl;
         exit(-1);
     }
-    /// @brief INTERNAL DO NOT USE
+
     void _assert(bool condition, std::string const &message, std::string const &file, int line)
     {
         if (condition)
             return;
 
         _crash(message, file, line);
+    }
+
+    void _breakif(bool condition)
+    {
+        if (!condition)
+            return;
+
+        __debugbreak;
     }
 #endif
 }
