@@ -162,8 +162,8 @@ namespace Rt
                 // Start from surface normal
                 Line probingRay{nearest->Hitevent.ReflectedRay.Origin, nearest->Hitevent.SurfaceNormal};
 
-                // spawn random rays
-                for (size_t j = 1; j < DIFFUSE_RAYS - 1; j++)
+                // spawn random rays, lesser and lesser the more depth
+                for (size_t j = 1; j < (DIFFUSE_RAYS - recursionDepth) - 1; j++)
                 {
                     // rotate away from surface normal in the plane (surface normal) x (reflection)
                     probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest->Hitevent.SurfaceNormal, nearest->Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));

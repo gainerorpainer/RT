@@ -19,7 +19,7 @@ constexpr bool USE_PARALLEL = true;
 constexpr bool DO_TESTS = false;
 #else
 constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
-constexpr bool USE_PARALLEL = true;
+constexpr bool USE_PARALLEL = false;
 constexpr bool DO_TESTS = true;
 #endif
 
