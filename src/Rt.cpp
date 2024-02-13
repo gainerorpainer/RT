@@ -37,29 +37,21 @@ namespace Rt
 
     void Raytracer::RunBitmapParallel(Bitmap::BitmapD &output, unsigned int numSidethreads)
     {
-        // build a square such that the amount of cells == numSidethreads
-        unsigned int const squareSideNum = (unsigned int)ceil(sqrt(numSidethreads));
-        size_t const xStep = (size_t)ceil((double)Bitmap::BITMAP_WIDTH / (double)squareSideNum);
-        size_t const yStep = (size_t)ceil((double)Bitmap::BITMAP_HEIGHT / (double)squareSideNum);
-
-        // Sidethread spawning
+        // spawn threads
         std::vector<std::thread> sidethreads;
         size_t argFromY = 0;
-        for (size_t yIt = 0; yIt < squareSideNum; yIt++)
+        size_t const yStep = (size_t)ceil((double)Bitmap::BITMAP_HEIGHT / (double)numSidethreads);
+        for (size_t i = 0; i < numSidethreads; i++)
         {
-            size_t argFromX = 0;
-            for (size_t xIt = 0; xIt < squareSideNum; xIt++)
-            {
-                size_t const argToX = std::min((size_t)Bitmap::BITMAP_WIDTH, argFromX + xStep);
-                size_t const argToY = std::min((size_t)Bitmap::BITMAP_HEIGHT, argFromY + yStep);
+            size_t const argToY = std::min((size_t)Bitmap::BITMAP_HEIGHT, argFromY + yStep);
 
-                // run as sidethread
-                sidethreads.emplace_back([this, &output](size_t argFromX, size_t argToX, size_t fromY, size_t toY)
-                                         {
+            // run as sidethread
+            sidethreads.emplace_back([this, &output](size_t fromY, size_t toY)
+                                     {
                                         Transformation::Map2Sphere const cameraTransformation{Bitmap::BITMAP_WIDTH, Bitmap::BITMAP_HEIGHT, Camera::FOV};
                                         for (size_t y = fromY; y < toY; y++)
                                         {
-                                            for (size_t x = argFromX; x < argToX; x++)
+                                            for (size_t x = 0; x < Bitmap::BITMAP_WIDTH; x++)
                                             {
                                                 // first ray comes from cam
                                                 Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
@@ -74,9 +66,7 @@ namespace Rt
                                                 std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
                                             }
                                         } },
-                                         argFromX, argToX, argFromY, argToY);
-                argFromX += xStep;
-            }
+                                     argFromY, argToY);
             argFromY += yStep;
         }
 
