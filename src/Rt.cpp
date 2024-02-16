@@ -139,18 +139,19 @@ namespace Rt
         };
         struct treeNode_t
         {
-            Line OriginRay;
             RayMarchResult ProbedResult;
             double GlobalWeight;
         };
-        struct lll
+        struct stackItem_t
         {
+            Line Ray;
+            double InheritedWeight;
             unsigned char Num_Children;
         };
         std::array<treeNode_t, GetTreesize(NUM_DIFFUSE_RAYS, NUM_RAY_BOUNCES)> treeOfRays{};
-        std::array<lll, GetTreesize(NUM_DIFFUSE_RAYS, NUM_RAY_BOUNCES - 1)> lastGenerationRays{};
+        std::array<stackItem_t, NUM_RAY_BOUNCES> rayGenerationStack{};
         auto const x = sizeof(treeOfRays);
-        auto const y = sizeof(lastGenerationRays);
+        auto const y = sizeof(rayGenerationStack);
         static_assert(x + y < 1024ULL * 1024ULL, "Stack size critical");
 
         Line rootRay = ray;
@@ -159,6 +160,7 @@ namespace Rt
         size_t recursionDepth = 0;
         while (true)
         {
+            rayGenerationStack[recursionDepth].Ray = rootRay;
             unsigned int rootNodeIndex = 0;
             unsigned int nodeColletionIndex = 0;
 
@@ -195,7 +197,7 @@ namespace Rt
             // add mirror-like ray
             double const weight = 1.0 - apparentDiffusionFactor;
             double localWeightSum = weight;
-            lastGenerationRays[nodeColletionIndex + 0] = lll{.Num_Children = 1};
+            rayGenerationStack[recursionDepth].Num_Children = 1;
             treeOfRays[nodeColletionIndex + 0] = treeNode_t{
                 .OriginRay = hitevent.ReflectedRay,
                 .GlobalWeight = 1.0 - apparentDiffusionFactor};
