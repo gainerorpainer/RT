@@ -24,7 +24,7 @@
         "-DNDEBUG",
         "-shared",
         "-Wl,--subsystem,windows",
-        "-Ofast",
+        "-O3",
         "-flto"
       ],
       "options": {
@@ -74,7 +74,7 @@
         "-o",
         "${workspaceFolder}\\rt.exe",
         "-DNDEBUG",
-        "-Ofast"
+        "-O3"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

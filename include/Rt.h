@@ -9,8 +9,8 @@
 
 namespace Rt
 {
-    constexpr unsigned int BOUNCE_ITERATIONS = 4;
-    constexpr unsigned int DIFFUSE_RAYS = 5;
+    constexpr unsigned int NUM_RAY_GENERATIONS = 2;
+    constexpr unsigned int NUM_DIFFUSE_RAYS = 2;
 
     class Raytracer
     {
@@ -32,7 +32,7 @@ namespace Rt
         };
 
         double RandDouble();
-        RayMarchResult MarchRay(Line const &ray, Shapes::Shape const *disabledCollision = nullptr, unsigned int const recursionDepth = 0);
+        ColorD_t MarchRay(Line const &ray);
     };
 
 }
