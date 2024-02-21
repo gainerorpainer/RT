@@ -45,7 +45,7 @@ namespace Rt
 
                 // paint pixel with object color into *image space*
                 std::copy(pixelcolor.begin(), pixelcolor.end(), output.atPixel(x, y));
-            }
+            } 
         }
     }
 
@@ -90,12 +90,15 @@ namespace Rt
             thread.join();
     }
 
-    RayIntersection_t FindClosestIntersection(Line const &ray)
+    RayIntersection_t FindClosestIntersection(Line const &ray, Shapes::Shape const *ignoreShape)
     {
         std::array<RayIntersection_t, Scene::Objects.size()> hits = {};
         for (unsigned int i = 0; i < Scene::Objects.size(); i++)
         {
             Shapes::Shape const *shape = Scene::Objects[i];
+
+            if (shape == ignoreShape)
+                continue;
 
             auto hitevent = shape->CheckHit(ray);
             if (!hitevent)
@@ -131,122 +134,128 @@ namespace Rt
 
     Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray)
     {
-        // data structure to hold tree
-        struct rayProbe_t
-        {
-            RayMarchResult ProbedResult;
-            double LambertianFactor;
-        };
-        struct treeNode_t
-        {
-            RayMarchResult ProbedResult;
-            double GlobalWeight;
-        };
         struct stackItem_t
         {
-            Line Ray;
+            Shapes::Shape const *SourceShape;
+            Line SourceRay;
+            Line ReflectedRay;
+            Vec3d SurfaceNormal;
+            Vec3d InheritedColorTransferFunction = {1, 1, 1};
             double InheritedWeight;
+            double ApparentDiffusionFactor;
             unsigned char Num_Children;
         };
-        std::array<treeNode_t, GetTreesize(NUM_DIFFUSE_RAYS, NUM_RAY_BOUNCES)> treeOfRays{};
-        std::array<stackItem_t, NUM_RAY_BOUNCES> rayGenerationStack{};
-        auto const x = sizeof(treeOfRays);
+        std::array<stackItem_t, NUM_RAY_BOUNCES + 1> rayGenerationStack{};
         auto const y = sizeof(rayGenerationStack);
-        static_assert(x + y < 1024ULL * 1024ULL, "Stack size critical");
+        static_assert(y < 1024ULL * 1024ULL, "Stack size critical");
 
-        Line rootRay = ray;
+        rayGenerationStack[0].SourceRay = ray;
+
+        RayMarchResult accumulator{};
 
         // build tree from bottom up
         size_t recursionDepth = 0;
         while (true)
         {
-            rayGenerationStack[recursionDepth].Ray = rootRay;
-            unsigned int rootNodeIndex = 0;
-            unsigned int nodeColletionIndex = 0;
-
-            auto const closestIntersection = FindClosestIntersection(rootRay);
-            if (!closestIntersection.Shape)
+            stackItem_t &currentStackItem = rayGenerationStack[recursionDepth];
+            if (currentStackItem.Num_Children == 0)
             {
-                // nothing hit, bad?
-                DEBUG_WARN("Ray did not hit anything!");
-                // walk tree up
-                if (recursionDepth-- == 0)
-                    return RayMarchResult{{1, 1, 1}, {0, 0, 0}};
-                continue;
-            }
-
-            Materials::Material const &material = closestIntersection.Shape->Material;
-            Shapes::HitEvent const &hitevent = closestIntersection.Hitevent;
-
-            // check if light source was hit
-            if (material.IsLightsource)
-            {
-                // walk tree up
-                if (recursionDepth-- == 0)
-                    return RayMarchResult{{1, 1, 1}, material.Emission};
-                continue;
-            }
-
-            // total reflection: Material then acts like a perfect mirror
-            double const angleOfIncidence = abs(hitevent.ReflectedRay.Direction.AngleTo(hitevent.SurfaceNormal));
-            // lerp between diffusion factor and 0 between the range critical angle .. 90°
-            double const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
-                                                                                             : std::lerp(material.DiffusionFactor, 0.0, (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
-            DEBUG_BREAKIF(apparentDiffusionFactor < material.DiffusionFactor);
-
-            // add mirror-like ray
-            double const weight = 1.0 - apparentDiffusionFactor;
-            double localWeightSum = weight;
-            rayGenerationStack[recursionDepth].Num_Children = 1;
-            treeOfRays[nodeColletionIndex + 0] = treeNode_t{
-                .OriginRay = hitevent.ReflectedRay,
-                .GlobalWeight = 1.0 - apparentDiffusionFactor};
-
-            // perfect mirror will only spawn single ray
-            if (apparentDiffusionFactor == 0)
-            {
-                // calculate weight to be globally relative
-                // only ray, so locally relative weight is 1.0
-                treeOfRays[nodeColletionIndex + 0].GlobalWeight = 1.0 * treeOfRays[rootNodeIndex].GlobalWeight;
-            }
-            else
-            {
-                // Start from surface normal
-                Line probingRay{hitevent.ReflectedRay.Origin, hitevent.SurfaceNormal};
-
-                // spawn random rays, lesser and lesser the more depth
-                // skip 1 since there has already been added one
-                for (size_t j = 1; j < NUM_DIFFUSE_RAYS; j++)
+                auto const closestIntersection = FindClosestIntersection(currentStackItem.SourceRay, currentStackItem.SourceShape);
+                if (!closestIntersection.Shape)
                 {
-                    // rotate away from surface normal in the plane (surface normal) x (reflection)
-                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(hitevent.SurfaceNormal, hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));
+                    // nothing hit, bad?
+                    DEBUG_WARN("Ray did not hit anything!");
 
-                    // start rotating about the normal in appropriate steps
-                    probingRay.Direction = probingRay.Direction.RotateAboutAxis(hitevent.SurfaceNormal, RandDouble() * Deg2Rad(360));
+                    // unwind stack
+                    if (recursionDepth-- == 0)
+                        break;
+                }
 
-                    DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
+                Materials::Material const &material = closestIntersection.Shape->Material;
 
-                    // Store in tree
-                    // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
-                    double const localWeight = abs(hitevent.ReflectedRay.Direction * probingRay.Direction);
-                    lastGenerationRays[nodeColletionIndex + 0] = lll{.Num_Children = 1};
-                    treeOfRays[j + recursionDepth] = treeNode_t{
-                        .OriginRay = probingRay,
-                        .GlobalWeight = localWeight};
+                // check if light source was hit
+                if (material.IsLightsource)
+                {
+                    accumulator.Emissions = accumulator.Emissions + material.Emission * currentStackItem.InheritedWeight;
 
-                    // keep track of local weights
-                    localWeightSum += localWeight;
+                    // unwind stack
+                    if (recursionDepth-- == 0)
+                        break;
+                }
+
+                if (recursionDepth == NUM_RAY_BOUNCES)
+                {
+                    // did not hit lightsource, no contribution
+                }
+
+                // store state
+                Shapes::HitEvent const &hitevent = closestIntersection.Hitevent;
+                currentStackItem.ReflectedRay = hitevent.ReflectedRay;
+                currentStackItem.SurfaceNormal = hitevent.SurfaceNormal;
+                currentStackItem.InheritedColorTransferFunction = currentStackItem.InheritedColorTransferFunction.MultiplyElementwise(material.ColorFilter);
+
+                // total reflection: Material then acts like a perfect mirror
+                double const angleOfIncidence = abs(hitevent.ReflectedRay.Direction.AngleTo(hitevent.SurfaceNormal));
+                // lerp between diffusion factor and 0 between the range critical angle .. 90°
+                currentStackItem.ApparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
+                                                                                                     : std::lerp(material.DiffusionFactor, 0.0, (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
+                DEBUG_BREAKIF(currentStackItem.ApparentDiffusionFactor < material.DiffusionFactor);
+
+                DEBUG_ASSERT(currentStackItem.ApparentDiffusionFactor > 0 && currentStackItem.ApparentDiffusionFactor <= material.DiffusionFactor, "Bad diffusion fadeout");
+                // add mirror-like ray
+                double const weight = 1.0 - currentStackItem.ApparentDiffusionFactor;
+
+                // push to stack
+                currentStackItem.Num_Children = 1;
+                rayGenerationStack[recursionDepth + 1].SourceRay = hitevent.ReflectedRay;
+                rayGenerationStack[recursionDepth + 1].InheritedWeight = weight;
+                rayGenerationStack[recursionDepth + 1].SourceShape = closestIntersection.Shape;
+
+                // go deeper
+                if (recursionDepth < NUM_RAY_BOUNCES)
+                {
+                    recursionDepth += 1;
+                    continue;
                 }
             }
 
-            // convert local weights to global weights
-            for (size_t i = 0; i < NUM_DIFFUSE_RAYS; i++)
-                treeOfRays[nodeColletionIndex + i].GlobalWeight /= localWeightSum;
+            // perfect mirror will only spawn single ray
+            if ((currentStackItem.ApparentDiffusionFactor > 0) && currentStackItem.Num_Children < NUM_DIFFUSE_RAYS)
+            {
+                // Start from surface normal
+                Line probingRay{currentStackItem.SourceRay.Origin, currentStackItem.SurfaceNormal};
+
+                // rotate away from surface normal in the plane (surface normal) x (reflection)
+                probingRay.Direction = probingRay.Direction.RotateAboutPlane(currentStackItem.SurfaceNormal, currentStackItem.SourceRay.Direction, RandDouble() * Deg2Rad(60));
+
+                // start rotating about the normal in appropriate steps
+                probingRay.Direction = probingRay.Direction.RotateAboutAxis(currentStackItem.SurfaceNormal, RandDouble() * Deg2Rad(360));
+
+                DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
+
+                // Store in tree
+                // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
+                double const weight = abs(currentStackItem.SourceRay.Direction * probingRay.Direction);
+
+                // push to stack
+                currentStackItem.Num_Children++;
+                rayGenerationStack[recursionDepth + 1].SourceRay = currentStackItem.ReflectedRay;
+                rayGenerationStack[recursionDepth + 1].InheritedWeight = weight;
+
+                // go deeper
+                if (recursionDepth < NUM_RAY_BOUNCES)
+                {
+                    recursionDepth += 1;
+                    continue;
+                }
+            }
 
             // walk tree up
             recursionDepth += 1;
             continue;
         }
+
+        return accumulator;
     }
 
     // Raytracer::RayMarchResult Raytracer::MarchRay(Line const &ray, Shapes::Shape const *disabledCollision, unsigned int const recursionDepth)
