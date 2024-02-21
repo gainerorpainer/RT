@@ -139,6 +139,7 @@ namespace Rt
         struct generationElement_t
         {
             Line Ray;
+            Vec3d ColorFilter;
             Shapes::Shape const *OriginShape;
         };
         struct generation_t
@@ -148,18 +149,19 @@ namespace Rt
         };
         std::array<generation_t, 2> generationBuffer{};
         Vec3d emissionAccumulator{0, 0, 0};
-        Vec3d filterAccumulator{1, 1, 1};
-        unsigned int recursionDepth = 0;
 
         // prepare initial conditions
         generationBuffer[0].Count = 1;
-        generationBuffer[0].Elements[0].Ray = ray;
+        generationBuffer[0].Elements[0] = generationElement_t{
+            .Ray = ray,
+            .ColorFilter = Vec3d{1, 1, 1},
+            .OriginShape = nullptr};
 
         for (size_t generationIndex = 0; generationIndex < NUM_RAY_GENERATIONS + 1; generationIndex++)
         {
             // swaps buffers on each iteration automatically
-            generation_t const & lastGeneration = generationBuffer[generationIndex % 2];
-            generation_t & nextGeneration = generationBuffer[(1 + generationIndex) % 2];
+            generation_t const &lastGeneration = generationBuffer[generationIndex % 2];
+            generation_t &nextGeneration = generationBuffer[(1 + generationIndex) % 2];
 
             // "clear" next generation
             nextGeneration.Count = 0;
@@ -175,14 +177,13 @@ namespace Rt
                     continue;
                 }
 
-                // todo: apply material to accumulator
                 Materials::Material const &material = nearest.Shape->Material;
 
                 // check if light source was hit
                 if (material.IsLightsource)
                 {
                     // todo: add weight
-                    emissionAccumulator = emissionAccumulator + material.Emission;
+                    emissionAccumulator = emissionAccumulator + material.Emission.MultiplyElementwise(lastGeneration.Elements[i].ColorFilter);
                     continue;
                 }
 
@@ -190,9 +191,13 @@ namespace Rt
                 if (generationIndex == NUM_RAY_GENERATIONS)
                     break;
 
+                Vec3d const effectiveColor = lastGeneration.Elements[i].ColorFilter.MultiplyElementwise(material.ColorFilter);
+
                 // perfect mirror will only spawn single ray
-                nextGeneration.Elements[nextGeneration.Count].Ray = nearest.Hitevent.ReflectedRay;
-                nextGeneration.Elements[nextGeneration.Count].OriginShape = nearest.Shape;
+                nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
+                    .Ray = nearest.Hitevent.ReflectedRay,
+                    .ColorFilter = effectiveColor,
+                    .OriginShape = nearest.Shape};
                 // .Weight = (1.0 - material.DiffusionFactor)
                 nextGeneration.Count++;
 
@@ -217,8 +222,10 @@ namespace Rt
 
                     DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
 
-                    nextGeneration.Elements[nextGeneration.Count].Ray = probingRay;
-                    nextGeneration.Elements[nextGeneration.Count].OriginShape = nearest.Shape;
+                    nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
+                        .Ray = probingRay,
+                        .ColorFilter = effectiveColor,
+                        .OriginShape = nearest.Shape};
                     // todo: add weight
                     // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
                     // .Weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction)
@@ -227,9 +234,7 @@ namespace Rt
             }
         }
 
-
-        ColorD_t const result = emissionAccumulator.MultiplyElementwise(filterAccumulator);
-        return result;
+        return emissionAccumulator;
     }
 
     double Raytracer::RandDouble()
