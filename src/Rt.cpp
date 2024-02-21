@@ -14,11 +14,11 @@ namespace Rt
         Shapes::HitEvent Hitevent;
     };
 
-    constexpr unsigned int constexpr_pow(unsigned int diffuseRays, unsigned int iterations)
+    constexpr unsigned int constexpr_pow(unsigned int base, unsigned int power)
     {
-        unsigned int multiplier = diffuseRays;
-        for (size_t i = 0; i < iterations - 1; i++)
-            multiplier *= multiplier;
+        unsigned int multiplier = base;
+        for (size_t i = 0; i < power - 1; i++)
+            multiplier *= base;
         return multiplier;
     }
 
@@ -139,21 +139,30 @@ namespace Rt
         struct generationElement_t
         {
             Line Ray;
+            double ParentWeight;
+            double Weight;
             Vec3d ColorFilter;
             Shapes::Shape const *OriginShape;
         };
         struct generation_t
         {
-            std::array<generationElement_t, constexpr_pow(NUM_RAY_GENERATIONS, NUM_DIFFUSE_RAYS)> Elements;
+            std::array<generationElement_t, constexpr_pow(NUM_DIFFUSE_RAYS, NUM_RAY_GENERATIONS)> Elements;
             unsigned int Count;
         };
         std::array<generation_t, 2> generationBuffer{};
+        {
+            size_t const NUM_GENERATION_ELEMENTS = generationBuffer[0].Elements.size();
+            size_t const STACK_SIZE_KB = sizeof(generationBuffer) / 1024u;
+            static_assert(STACK_SIZE_KB < 512, "Critical Stack Size");
+        }
         Vec3d emissionAccumulator{0, 0, 0};
 
         // prepare initial conditions
         generationBuffer[0].Count = 1;
         generationBuffer[0].Elements[0] = generationElement_t{
             .Ray = ray,
+            .ParentWeight = 1.0,
+            .Weight = 1.0,
             .ColorFilter = Vec3d{1, 1, 1},
             .OriginShape = nullptr};
 
@@ -168,7 +177,8 @@ namespace Rt
 
             for (size_t i = 0; i < lastGeneration.Count; i++)
             {
-                auto const nearest = GetClosestIntersection(lastGeneration.Elements[i].Ray, lastGeneration.Elements[i].OriginShape);
+                generationElement_t const &parentElement = lastGeneration.Elements[i];
+                auto const nearest = GetClosestIntersection(parentElement.Ray, parentElement.OriginShape);
 
                 if (!nearest.Shape)
                 {
@@ -182,8 +192,7 @@ namespace Rt
                 // check if light source was hit
                 if (material.IsLightsource)
                 {
-                    // todo: add weight
-                    emissionAccumulator = emissionAccumulator + material.Emission.MultiplyElementwise(lastGeneration.Elements[i].ColorFilter);
+                    emissionAccumulator = emissionAccumulator + parentElement.Weight * material.Emission.MultiplyElementwise(parentElement.ColorFilter);
                     continue;
                 }
 
@@ -191,14 +200,15 @@ namespace Rt
                 if (generationIndex == NUM_RAY_GENERATIONS)
                     break;
 
-                Vec3d const effectiveColor = lastGeneration.Elements[i].ColorFilter.MultiplyElementwise(material.ColorFilter);
+                Vec3d const effectiveColor = parentElement.ColorFilter.MultiplyElementwise(material.ColorFilter);
 
                 // perfect mirror will only spawn single ray
                 nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                     .Ray = nearest.Hitevent.ReflectedRay,
+                    .ParentWeight = parentElement.Weight,
+                    .Weight = 1.0 - material.DiffusionFactor,
                     .ColorFilter = effectiveColor,
                     .OriginShape = nearest.Shape};
-                // .Weight = (1.0 - material.DiffusionFactor)
                 nextGeneration.Count++;
 
                 // total reflection: Material then acts like a perfect mirror
@@ -224,13 +234,34 @@ namespace Rt
 
                     nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                         .Ray = probingRay,
+                        .ParentWeight = parentElement.Weight,
+                        // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
+                        .Weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction),
                         .ColorFilter = effectiveColor,
                         .OriginShape = nearest.Shape};
-                    // todo: add weight
-                    // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
-                    // .Weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction)
                     nextGeneration.Count++;
                 };
+            }
+
+            // do not convert weights as they will not be read anymore
+            if (generationIndex == NUM_RAY_GENERATIONS)
+                break;
+
+            // make "local abs" to "global rel" weights
+            if (nextGeneration.Count < 2)
+            {
+                nextGeneration.Elements[0].Weight = 1.0;
+            }
+            else
+            {
+                double const weightSum = std::accumulate(nextGeneration.Elements.begin(), nextGeneration.Elements.begin() + nextGeneration.Count,
+                                                         0.0, [](double const &last, generationElement_t const &next)
+                                                         { return last + next.Weight; });
+                for (size_t i = 0; i < nextGeneration.Count; i++)
+                {
+                    double const localWeight = nextGeneration.Elements[i].Weight / weightSum;
+                    nextGeneration.Elements[i].Weight = nextGeneration.Elements[i].ParentWeight * localWeight;
+                }
             }
         }
 

@@ -9,8 +9,8 @@
 
 namespace Rt
 {
-    constexpr unsigned int NUM_RAY_GENERATIONS = 2;
-    constexpr unsigned int NUM_DIFFUSE_RAYS = 2;
+    constexpr unsigned int NUM_RAY_GENERATIONS = 5;
+    constexpr unsigned int NUM_DIFFUSE_RAYS = 4;
 
     class Raytracer
     {

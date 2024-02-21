@@ -15,12 +15,13 @@
 constexpr bool USE_PARALLEL = true;
 // skip tests
 constexpr bool DO_TESTS = false;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
 #else
 constexpr bool USE_PARALLEL = false;
 constexpr bool DO_TESTS = true;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
 #endif
 
-constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
 
 const unsigned int AvailableWorkers = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 

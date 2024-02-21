@@ -4,8 +4,8 @@
 
 namespace Bitmap
 {
-    constexpr unsigned int BITMAP_WIDTH = 800;
-    constexpr unsigned int BITMAP_HEIGHT = 600;
+    constexpr unsigned int BITMAP_WIDTH = 400;
+    constexpr unsigned int BITMAP_HEIGHT = 300;
     constexpr unsigned int COLOR_COUNT = 3;
 
     constexpr unsigned int BUFFERSIZE = BITMAP_WIDTH * BITMAP_HEIGHT * COLOR_COUNT;
