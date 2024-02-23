@@ -15,7 +15,7 @@
 constexpr bool USE_PARALLEL = true;
 // skip tests
 constexpr bool DO_TESTS = false;
-constexpr unsigned int NUM_SMOOTHING_PASSES = 1;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 2;
 #else
 constexpr bool USE_PARALLEL = false;
 constexpr bool DO_TESTS = true;

@@ -18,7 +18,7 @@ namespace Scene
                    {0, 0, 0},
                    1000},
         new Plane{"Floor",
-                  Materials::Material{}.MakeAbsorbing({255, 255, 255}).MakeDiffuse(0.75).MakeTotallyReflecting(Deg2Rad(85)),
+                  Materials::Material{}.MakeAbsorbing({255, 255, 255}).MakeDiffuse(0.9).MakeTotallyReflecting(Deg2Rad(85)),
                   {0, 0, 0},
                   {0, 0, 1}},
         new Sphere{"Red Sphere",

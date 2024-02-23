@@ -198,24 +198,31 @@ namespace Rt
 
                 // do not generate more rays on last iteration as they will not be checked anymore
                 if (generationIndex == NUM_RAY_GENERATIONS)
-                    break;
+                    continue;
 
                 Vec3d const effectiveColor = parentElement.ColorFilter.MultiplyElementwise(material.ColorFilter);
+                double const angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
+
+                // total reflection: Material then acts like a perfect mirror
+                
+                // lerp between diffusion factor and 0 between the range critical angle .. 90°
+                double const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
+                                                                                                     : std::lerp(material.DiffusionFactor, 0.0, 
+                                                                                                     (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
+                DEBUG_ASSERT(apparentDiffusionFactor >= 0 && apparentDiffusionFactor <= material.DiffusionFactor, "Bad diffusion fadeout");
 
                 // perfect mirror will only spawn single ray
                 nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                     .Ray = nearest.Hitevent.ReflectedRay,
                     .ParentWeight = parentElement.Weight,
-                    .Weight = 1.0 - material.DiffusionFactor,
+                    .Weight = 1.0 - apparentDiffusionFactor,
                     .ColorFilter = effectiveColor,
                     .OriginShape = nearest.Shape};
                 nextGeneration.Count++;
 
-                // total reflection: Material then acts like a perfect mirror
-                double const angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
                 bool const isTotallyReflected = angleOfIncidence > material.CriticalAngle;
 
-                if (material.DiffusionFactor < 0.01 || isTotallyReflected)
+                if (apparentDiffusionFactor < 0.01 || isTotallyReflected)
                     continue;
 
                 // spawn random rays (1 is already spawned)
@@ -225,7 +232,7 @@ namespace Rt
                     Line probingRay{nearest.Hitevent.ReflectedRay.Origin, nearest.Hitevent.SurfaceNormal};
 
                     // rotate away from surface normal in the plane (surface normal) x (reflection)
-                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));
+                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(80));
 
                     // start rotating about the normal in appropriate steps
                     probingRay.Direction = probingRay.Direction.RotateAboutAxis(nearest.Hitevent.SurfaceNormal, RandDouble() * Deg2Rad(360));

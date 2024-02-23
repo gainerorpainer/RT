@@ -11,7 +11,7 @@ import cv2
 IMGPATH = "Render\\output.ppm"
 DLLPATH = "rt.dll"
 WINDOWNAME = "Output"
-DOWNSIZE_FACTOR = 2
+DOWNSIZE_FACTOR = 1
 
 
 def main():
