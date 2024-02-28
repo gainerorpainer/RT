@@ -26,7 +26,7 @@ namespace Tests
     inline void _test_probes()
     {
         constexpr unsigned int RAYCOUNT = 5;
-        auto const RandDouble = []()
+        auto const RandFloat = []()
         { return (std::rand() % 2) ? 0.5 : 1; };
 
         const Vec3d origin = {0, 0, 0};
@@ -42,10 +42,10 @@ namespace Tests
         for (size_t j = 0; j < RAYCOUNT; j++)
         {
             // rotate away from surface normal in the plane (surface normal) x (reflection)
-            probingRay.Direction = probingRay.Direction.RotateAboutPlane(surfaceNormal, reflection, RandDouble() * Deg2Rad(60));
+            probingRay.Direction = probingRay.Direction.RotateAboutPlane(surfaceNormal, reflection, RandFloat() * Deg2Rad(60));
 
             // start rotating about the normal in appropriate steps
-            probingRay.Direction = probingRay.Direction.RotateAboutAxis(surfaceNormal, 0.8 * RandDouble() * Deg2Rad(360));
+            probingRay.Direction = probingRay.Direction.RotateAboutAxis(surfaceNormal, 0.8 * RandFloat() * Deg2Rad(360));
 
             DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
 

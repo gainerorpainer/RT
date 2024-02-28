@@ -27,8 +27,6 @@ namespace Shapes
 
     protected:
         Shape(std::string const &label, Materials::Material const &material);
-
-        static Vec3d Reflect(Vec3d const &direction, Vec3d const &normal);
     };
 
     struct Sphere : public Shape

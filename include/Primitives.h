@@ -9,23 +9,24 @@ namespace Primitives
     using Color_t = std::array<unsigned char, 3>;
     struct Vec3d;
     using ColorD_t = Vec3d;
+    using FloatingType_t = float;
 
     struct Vec3d
     {
-        std::array<double, 3> Data;
-        double const &X = Data[0];
-        double const &Y = Data[1];
-        double const &Z = Data[2];
+        std::array<FloatingType_t, 3> Data;
+        FloatingType_t const &X = Data[0];
+        FloatingType_t const &Y = Data[1];
+        FloatingType_t const &Z = Data[2];
 
         /// @brief Ctor
         /// @param x
         /// @param y
         /// @param z
-        Vec3d(double x, double y, double z);
+        Vec3d(FloatingType_t x, FloatingType_t y, FloatingType_t z);
 
         /// @brief Ctor
         /// @param vector from array
-        Vec3d(std::array<double, 3> const &vector);
+        Vec3d(std::array<FloatingType_t, 3> const &vector);
 
         /// @brief Ctor
         /// @param color from color
@@ -47,7 +48,7 @@ namespace Primitives
 
         /// @brief Compute norm (length) of vector
         /// @return The norm (length)
-        double GetNorm() const;
+        FloatingType_t GetNorm() const;
 
         /// @brief Compute normalized version of this vector
         /// @return This vector scaled to length 1
@@ -68,29 +69,29 @@ namespace Primitives
         /// @param planeV2 second plane vector
         /// @param angle Angle to rotate about (from planeV1 towards planeV2)
         /// @return This rotated vector
-        Vec3d RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, double angle) const;
+        Vec3d RotateAboutPlane(const Vec3d &planeV1, const Vec3d &planeV2, FloatingType_t angle) const;
 
         /// @brief Applies a somewhat slow rotation about an axis
         /// @param axis Axis of rotation
         /// @param angle Angle of rotation (right hand rule)
         /// @return This rotated vector
-        Vec3d RotateAboutAxis(const Vec3d &axis, double angle) const;
+        Vec3d RotateAboutAxis(const Vec3d &axis, FloatingType_t angle) const;
 
         /// @brief Calculates the angle between this and another normalized vector
         /// @param other Normalized vector
         /// @return The angle between this and the other vector
-        double
+        FloatingType_t
         AngleTo(const Vec3d &other) const;
 
         /// @brief DOTPRODUCT
         /// @param righthand
         /// @return Elementwise multiplication and summation
-        double operator*(const Vec3d &righthand) const;
+        FloatingType_t operator*(const Vec3d &righthand) const;
 
         /// @brief Scalar multiply
         /// @param righthand scalar
         /// @return Scaled vector
-        Vec3d operator*(const double righthand) const;
+        Vec3d operator*(const FloatingType_t righthand) const;
 
         /// @brief PLUS
         /// @param righthand
@@ -117,7 +118,7 @@ namespace Primitives
     /// @param lefthand scalar
     /// @param righthand vector
     /// @return scaled vector
-    Vec3d operator*(double lefthand, const Vec3d &righthand);
+    Vec3d operator*(FloatingType_t lefthand, const Vec3d &righthand);
 
     struct Line
     {
@@ -125,12 +126,12 @@ namespace Primitives
         Vec3d Direction;
     };
 
-    constexpr double Deg2Rad(double deg)
+    constexpr FloatingType_t Deg2Rad(FloatingType_t deg)
     {
         return deg * M_PI / 180.0;
     }
 
-    constexpr double Rad2Deg(double deg)
+    constexpr FloatingType_t Rad2Deg(FloatingType_t deg)
     {
         return deg * 180.0 / M_PI;
     }

@@ -38,7 +38,6 @@ namespace Rt
                 // first ray comes from cam
                 Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
 
-
                 // Let ray bounce around and determine the color
                 auto const pixelcolor = MarchRay(ray);
 
@@ -61,8 +60,8 @@ namespace Rt
         std::vector<std::thread> sidethreads;
         size_t argFromX = 0;
         size_t argFromY = 0;
-        size_t const xStep = (size_t)ceil((double)Bitmap::BITMAP_WIDTH / (double)numSidethreads);
-        size_t const yStep = (size_t)ceil((double)Bitmap::BITMAP_HEIGHT / (double)numSidethreads);
+        size_t const xStep = (size_t)ceil((FloatingType_t)Bitmap::BITMAP_WIDTH / (FloatingType_t)numSidethreads);
+        size_t const yStep = (size_t)ceil((FloatingType_t)Bitmap::BITMAP_HEIGHT / (FloatingType_t)numSidethreads);
         for (size_t i = 0; i < numSidethreads; i++)
         {
             size_t const argToX = std::min((size_t)Bitmap::BITMAP_WIDTH, argFromX + xStep);
@@ -96,16 +95,13 @@ namespace Rt
             thread.join();
     }
 
-    inline rayIntersection_t GetClosestIntersection(Line const &ray, Shapes::Shape const *disabledCollision)
+    inline rayIntersection_t GetClosestIntersection(Line const &ray)
     {
         std::array<rayIntersection_t, Scene::Objects.size()> possibleHits = {};
         unsigned int hitCount = 0;
         for (unsigned int i = 0; i < Scene::Objects.size(); i++)
         {
             Shapes::Shape const *shape = Scene::Objects[i];
-
-            if (shape == disabledCollision)
-                continue;
 
             auto hitevent = shape->CheckHit(ray);
             if (!hitevent)
@@ -118,7 +114,7 @@ namespace Rt
             return rayIntersection_t{};
 
         // find element with shortest distance
-        double shortestDistance = INFINITY;
+        FloatingType_t shortestDistance = INFINITY;
         decltype(possibleHits)::iterator nearest = possibleHits.end();
         for (auto it = possibleHits.begin(); it < possibleHits.begin() + hitCount; it++)
         {
@@ -139,29 +135,40 @@ namespace Rt
     {
         struct generationElement_t
         {
-            Line Ray;
-            double ParentWeight;
-            double Weight;
+            uint16_t ParentRayIndex;
+            float ParentWeight;
+            float Weight;
             Vec3d ColorFilter;
             Shapes::Shape const *OriginShape;
         };
         struct generation_t
         {
             std::array<generationElement_t, constexpr_pow(NUM_DIFFUSE_RAYS, NUM_RAY_GENERATIONS)> Elements;
-            unsigned int Count;
+            uint16_t Count;
+        };
+        struct parentRays_t
+        {
+            std::array<Line, constexpr_pow(NUM_DIFFUSE_RAYS, NUM_RAY_GENERATIONS - 1)> Rays;
+            uint16_t Count;
         };
         std::array<generation_t, 2> generationBuffer{};
-        {
-            size_t const NUM_GENERATION_ELEMENTS = generationBuffer[0].Elements.size();
-            size_t const STACK_SIZE_KB = sizeof(generationBuffer) / 1024u;
-            static_assert(STACK_SIZE_KB < 512, "Critical Stack Size");
-        }
+        std::array<parentRays_t, 2> generationRays{};
         Vec3d emissionAccumulator{0, 0, 0};
 
+        // asserts
+        {
+            size_t const STACK_SIZE_KB = (sizeof(generationBuffer) + sizeof(generationRays)) / 1024u;
+            static_assert(STACK_SIZE_KB < 1024, "Critical Stack Size");
+            static_assert(constexpr_pow(2, sizeof(generation_t::Count) * 8) > generationBuffer[0].Elements.size(), "Count is too small");
+            static_assert(constexpr_pow(2, sizeof(parentRays_t::Count) * 8) > generationRays[0].Rays.size(), "Count is too small");
+            static_assert(constexpr_pow(2, sizeof(generationElement_t::ParentRayIndex) * 8) > generationRays[0].Rays.size(), "ParentRayIndex is too small");
+        }
+
         // prepare initial conditions
+        generationRays[0].Rays[0] = ray;
         generationBuffer[0].Count = 1;
         generationBuffer[0].Elements[0] = generationElement_t{
-            .Ray = ray,
+            .ParentRayIndex = 0,
             .ParentWeight = 1.0,
             .Weight = 1.0,
             .ColorFilter = Vec3d{1, 1, 1},
@@ -173,8 +180,12 @@ namespace Rt
             generation_t const &lastGeneration = generationBuffer[generationIndex % 2];
             generation_t &nextGeneration = generationBuffer[(1 + generationIndex) % 2];
 
+            parentRays_t const &lastRays = generationRays[generationIndex % 2];
+            parentRays_t &nextRays = generationRays[(1 + generationIndex) % 2];
+
             // "clear" next generation
             nextGeneration.Count = 0;
+            nextRays.Count = 0;
 
             for (size_t i = 0; i < lastGeneration.Count; i++)
             {
@@ -184,7 +195,7 @@ namespace Rt
                 if (parentElement.Weight < 0.01)
                     continue;
 
-                auto const nearest = GetClosestIntersection(parentElement.Ray, parentElement.OriginShape);
+                auto const nearest = GetClosestIntersection(lastRays.Rays[parentElement.ParentRayIndex]);
 
                 if (!nearest.Shape)
                 {
@@ -207,23 +218,28 @@ namespace Rt
                     continue;
 
                 Vec3d const effectiveColor = parentElement.ColorFilter.MultiplyElementwise(material.ColorFilter);
-                double const angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
+                FloatingType_t angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
+
+                if (isnan(angleOfIncidence))
+                    angleOfIncidence = 0;
 
                 // total reflection: Material then acts like a perfect mirror
 
                 // lerp between diffusion factor and 0 between the range critical angle .. 90°
-                double const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
-                                                                                                 : std::lerp(material.DiffusionFactor, 0.0,
-                                                                                                             (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
+                FloatingType_t const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
+                                                                                                         : std::lerp(material.DiffusionFactor, 0.0,
+                                                                                                                     (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
                 DEBUG_ASSERT(apparentDiffusionFactor >= 0 && apparentDiffusionFactor <= material.DiffusionFactor, "Bad diffusion fadeout");
 
                 // perfect mirror will only spawn single ray
+                nextRays.Rays[nextRays.Count] = nearest.Hitevent.ReflectedRay;
                 nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
-                    .Ray = nearest.Hitevent.ReflectedRay,
+                    .ParentRayIndex = nextRays.Count,
                     .ParentWeight = parentElement.Weight,
-                    .Weight = 1.0 - apparentDiffusionFactor,
+                    .Weight = FloatingType_t{1} - apparentDiffusionFactor,
                     .ColorFilter = effectiveColor,
                     .OriginShape = nearest.Shape};
+                nextRays.Count++;
                 nextGeneration.Count++;
 
                 bool const isTotallyReflected = angleOfIncidence > material.CriticalAngle;
@@ -238,26 +254,28 @@ namespace Rt
                     Line probingRay{nearest.Hitevent.ReflectedRay.Origin, nearest.Hitevent.SurfaceNormal};
 
                     // rotate away from surface normal in the plane (surface normal) x (reflection)
-                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));
+                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandFloat() * Deg2Rad(60));
 
                     // start rotating about the normal in appropriate steps
-                    probingRay.Direction = probingRay.Direction.RotateAboutAxis(nearest.Hitevent.SurfaceNormal, RandDouble() * Deg2Rad(360));
+                    probingRay.Direction = probingRay.Direction.RotateAboutAxis(nearest.Hitevent.SurfaceNormal, RandFloat() * Deg2Rad(360));
 
                     DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
 
-                    double const weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction);
+                    FloatingType_t const weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction);
 
                     // too little contribution
                     if (weight < 0.01)
                         continue;
 
+                    nextRays.Rays[nextRays.Count] = probingRay;
                     nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
-                        .Ray = probingRay,
+                        .ParentRayIndex = nextRays.Count,
                         .ParentWeight = parentElement.Weight,
                         // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
                         .Weight = weight,
                         .ColorFilter = effectiveColor,
                         .OriginShape = nearest.Shape};
+                    nextRays.Count++;
                     nextGeneration.Count++;
                 };
             }
@@ -273,12 +291,12 @@ namespace Rt
             }
             else
             {
-                double const weightSum = std::accumulate(nextGeneration.Elements.begin(), nextGeneration.Elements.begin() + nextGeneration.Count,
-                                                         0.0, [](double const &last, generationElement_t const &next)
-                                                         { return last + next.Weight; });
+                FloatingType_t const weightSum = std::accumulate(nextGeneration.Elements.begin(), nextGeneration.Elements.begin() + nextGeneration.Count,
+                                                                 0.0, [](FloatingType_t const &last, generationElement_t const &next)
+                                                                 { return last + next.Weight; });
                 for (size_t i = 0; i < nextGeneration.Count; i++)
                 {
-                    double const localWeight = nextGeneration.Elements[i].Weight / weightSum;
+                    FloatingType_t const localWeight = nextGeneration.Elements[i].Weight / weightSum;
                     nextGeneration.Elements[i].Weight = nextGeneration.Elements[i].ParentWeight * localWeight;
                 }
             }
@@ -287,8 +305,8 @@ namespace Rt
         return emissionAccumulator;
     }
 
-    double Raytracer::RandDouble()
+    FloatingType_t Raytracer::RandFloat()
     {
-        return std::uniform_real_distribution<double>{}(RngEngine);
+        return std::uniform_real_distribution<FloatingType_t>{}(RngEngine);
     }
 }

@@ -10,7 +10,7 @@
 
 constexpr bool AlmostSame(double a, double b)
 {
-    return abs(a - b) <= 1e-4;
+    return abs(a - b) <= 1e-2;
 }
 
 namespace Debug

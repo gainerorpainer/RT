@@ -4,6 +4,8 @@
 
 namespace Shapes
 {
+    constexpr double OFFSET_DELTA = 1e-3;
+
     double signOf(double val)
     {
         if (val > 0)
@@ -12,18 +14,18 @@ namespace Shapes
             return -1.0;
     }
 
-    Shape::Shape(std::string const &label, Materials::Material const &material)
-        : Label{label}, Material{material}
-    {
-    }
-
-    Vec3d Shape::Reflect(Vec3d const &direction, Vec3d const &normal)
+    Vec3d Reflect(Vec3d const &direction, Vec3d const &normal)
     {
         // https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
         Vec3d const reflectionDirection = direction - 2.0 * (direction * normal) * normal;
         DEBUG_ASSERT(AlmostSame(reflectionDirection.GetNorm(), 1.0), "Reflection did not yield normalized vector");
 
         return reflectionDirection;
+    }
+
+    Shape::Shape(std::string const &label, Materials::Material const &material)
+        : Label{label}, Material{material}
+    {
     }
 
     Sphere::Sphere(std::string const &label, Materials::Material const &material, Vec3d center, double radius)
@@ -45,33 +47,27 @@ namespace Shapes
         if (c > 0 && b > 0)
             return std::nullopt;
 
-        double const discriminant = b * b - c;
-
         // no intersection
+        double const discriminant = b * b - c;
         if (discriminant < 0)
             return std::nullopt;
 
         // calc parameter t on r = line.Origin + line.Direction * t, taking the solution that is within the line direction
         // https://www.shadertoy.com/view/4d2XWV
-        double const distance = -b - signOf(c) * sqrt(discriminant);
+        double distance = -b - signOf(c) * sqrt(discriminant);
         // double const distance = abs(-b - sqrt(discriminant));
 
+        // reflect such that it does not intersect with itself
         DEBUG_ASSERT(distance > 0, "Distance must be in the ray direction");
+        distance -= OFFSET_DELTA;
 
         // intersection point
         Vec3d const intersectionPoint = line.Origin + distance * line.Direction;
-
-        DEBUG_ASSERT(AlmostSame((intersectionPoint - Centerpoint).GetNorm(), Radius), "Intersection is not on plane");
 
         // calc intersection normal
         Vec3d const directionToIntersection = (intersectionPoint - Centerpoint).ToNormalized();
         Vec3d const normal = c > 0 ? directionToIntersection : -directionToIntersection; // takes into consideration when within sphere
         Vec3d const reflectionDirection = Reflect(line.Direction, normal);
-
-        if (c < 0)
-        {
-            DEBUG_ASSERT(signOf(directionToIntersection.X) != signOf(reflectionDirection.X) && signOf(directionToIntersection.Y) != signOf(reflectionDirection.Y) && signOf(directionToIntersection.Z) != signOf(reflectionDirection.Z), "Bad reflection");
-        }
 
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = normal,
@@ -88,26 +84,33 @@ namespace Shapes
     {
         DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
 
-        double const numerator = (Pin - line.Origin) * Normal;
         double const denominator = line.Direction * Normal;
         // parallel?
         if (denominator == 0)
         {
-            DEBUG_ASSERT(numerator != 0, "Line is within plane");
             // if numerator != 0, the ray is within the plane, consider no hit
+            DEBUG_ASSERT(!AlmostSame((Pin - line.Origin) * Normal, 0), "Line is within plane");
             return std::nullopt;
         }
 
         // check numerator / denominator = distance > 0
-        double const distance = numerator / denominator;
+        double const numerator = (Pin - line.Origin) * Normal;
+        double distance = numerator / denominator;
         if (distance < 0)
             return std::nullopt;
+
+        // reflect such that it does not intersect with itself
+        DEBUG_ASSERT(distance > 0, "Distance too close!");
+        distance -= OFFSET_DELTA;
 
         // Calc reflection ray
         Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
         Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
 
-        // DEBUG_ASSERT(reflectionPoint.)
+        // if (Label == "Floor")
+        // {
+        //     DEBUG_ASSERT(reflectionPoint.GetNorm() <= 1000, "Reflection outside scene");
+        // }
 
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = Normal,
