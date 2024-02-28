@@ -64,8 +64,14 @@ namespace Shapes
         DEBUG_ASSERT(AlmostSame((intersectionPoint - Centerpoint).GetNorm(), Radius), "Intersection is not on plane");
 
         // calc intersection normal
-        Vec3d const normal = (c > 0 ? (intersectionPoint - Centerpoint) : (Centerpoint - intersectionPoint)).ToNormalized(); // takes into consideration when within sphere
+        Vec3d const directionToIntersection = (intersectionPoint - Centerpoint).ToNormalized();
+        Vec3d const normal = c > 0 ? directionToIntersection : -directionToIntersection; // takes into consideration when within sphere
         Vec3d const reflectionDirection = Reflect(line.Direction, normal);
+
+        if (c < 0)
+        {
+            DEBUG_ASSERT(signOf(directionToIntersection.X) != signOf(reflectionDirection.X) && signOf(directionToIntersection.Y) != signOf(reflectionDirection.Y) && signOf(directionToIntersection.Z) != signOf(reflectionDirection.Z), "Bad reflection");
+        }
 
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = normal,
@@ -87,6 +93,7 @@ namespace Shapes
         // parallel?
         if (denominator == 0)
         {
+            DEBUG_ASSERT(numerator != 0, "Line is within plane");
             // if numerator != 0, the ray is within the plane, consider no hit
             return std::nullopt;
         }
@@ -99,6 +106,8 @@ namespace Shapes
         // Calc reflection ray
         Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
         Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
+
+        // DEBUG_ASSERT(reflectionPoint.)
 
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = Normal,

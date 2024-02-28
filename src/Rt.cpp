@@ -38,6 +38,7 @@ namespace Rt
                 // first ray comes from cam
                 Line ray = {Camera::Origin, cameraTransformation.Transform(x, y)};
 
+
                 // Let ray bounce around and determine the color
                 auto const pixelcolor = MarchRay(ray);
 
@@ -178,6 +179,11 @@ namespace Rt
             for (size_t i = 0; i < lastGeneration.Count; i++)
             {
                 generationElement_t const &parentElement = lastGeneration.Elements[i];
+
+                // skip non-significant elements
+                if (parentElement.Weight < 0.01)
+                    continue;
+
                 auto const nearest = GetClosestIntersection(parentElement.Ray, parentElement.OriginShape);
 
                 if (!nearest.Shape)
@@ -204,11 +210,11 @@ namespace Rt
                 double const angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
 
                 // total reflection: Material then acts like a perfect mirror
-                
+
                 // lerp between diffusion factor and 0 between the range critical angle .. 90°
                 double const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
-                                                                                                     : std::lerp(material.DiffusionFactor, 0.0, 
-                                                                                                     (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
+                                                                                                 : std::lerp(material.DiffusionFactor, 0.0,
+                                                                                                             (angleOfIncidence - material.CriticalAngle) / (Deg2Rad(90) - material.CriticalAngle));
                 DEBUG_ASSERT(apparentDiffusionFactor >= 0 && apparentDiffusionFactor <= material.DiffusionFactor, "Bad diffusion fadeout");
 
                 // perfect mirror will only spawn single ray
@@ -232,18 +238,24 @@ namespace Rt
                     Line probingRay{nearest.Hitevent.ReflectedRay.Origin, nearest.Hitevent.SurfaceNormal};
 
                     // rotate away from surface normal in the plane (surface normal) x (reflection)
-                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(80));
+                    probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandDouble() * Deg2Rad(60));
 
                     // start rotating about the normal in appropriate steps
                     probingRay.Direction = probingRay.Direction.RotateAboutAxis(nearest.Hitevent.SurfaceNormal, RandDouble() * Deg2Rad(360));
 
                     DEBUG_ASSERT(AlmostSame(probingRay.Direction.GetNorm(), 1.0), "Rotation is bad for vector");
 
+                    double const weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction);
+
+                    // too little contribution
+                    if (weight < 0.01)
+                        continue;
+
                     nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                         .Ray = probingRay,
                         .ParentWeight = parentElement.Weight,
                         // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
-                        .Weight = abs(nearest.Hitevent.SurfaceNormal * probingRay.Direction),
+                        .Weight = weight,
                         .ColorFilter = effectiveColor,
                         .OriginShape = nearest.Shape};
                     nextGeneration.Count++;
