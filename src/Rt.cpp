@@ -139,7 +139,6 @@ namespace Rt
             float ParentWeight;
             float Weight;
             Vec3d ColorFilter;
-            Shapes::Shape const *OriginShape;
         };
         struct generation_t
         {
@@ -171,8 +170,7 @@ namespace Rt
             .ParentRayIndex = 0,
             .ParentWeight = 1.0,
             .Weight = 1.0,
-            .ColorFilter = Vec3d{1, 1, 1},
-            .OriginShape = nullptr};
+            .ColorFilter = Vec3d{1, 1, 1}};
 
         for (size_t generationIndex = 0; generationIndex < NUM_RAY_GENERATIONS + 1; generationIndex++)
         {
@@ -213,6 +211,9 @@ namespace Rt
                     continue;
                 }
 
+                // todo, add some light in the color of the material
+                //emissionAccumulator = emissionAccumulator + (255 * material.ColorFilter);
+
                 // do not generate more rays on last iteration as they will not be checked anymore
                 if (generationIndex == NUM_RAY_GENERATIONS)
                     continue;
@@ -236,9 +237,8 @@ namespace Rt
                 nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                     .ParentRayIndex = nextRays.Count,
                     .ParentWeight = parentElement.Weight,
-                    .Weight = FloatingType_t{1} - apparentDiffusionFactor,
-                    .ColorFilter = effectiveColor,
-                    .OriginShape = nearest.Shape};
+                    .Weight = (FloatingType_t{1} - apparentDiffusionFactor),
+                    .ColorFilter = effectiveColor};
                 nextRays.Count++;
                 nextGeneration.Count++;
 
@@ -273,8 +273,7 @@ namespace Rt
                         .ParentWeight = parentElement.Weight,
                         // both have norm = 1! So this weights parallel lines to 1 and perpendicular to 0
                         .Weight = weight,
-                        .ColorFilter = effectiveColor,
-                        .OriginShape = nearest.Shape};
+                        .ColorFilter = effectiveColor};
                     nextRays.Count++;
                     nextGeneration.Count++;
                 };

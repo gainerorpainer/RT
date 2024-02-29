@@ -14,7 +14,7 @@ namespace Scene
                   {-100, 100, 100},
                   {2, -1, -1}},
         new Sphere{"Skysphere",
-                   Materials::Material{}.MakeAbsorbing({50, 100, 255}).MakeDiffuse(1),
+                   Materials::Material{}.MakeEmissive({50, 100, 255}),
                    {0, 0, 0},
                    1000},
         new Plane{"Floor",
