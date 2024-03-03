@@ -187,8 +187,10 @@ namespace Rt
             nextRays.Count = 0;
             weightSum = 0;
 
-            for (generationElement_t const &parentElement : lastGeneration.Elements)
+            for (size_t i = 0; i < lastGeneration.Count; i++)
             {
+                generationElement_t const &parentElement = lastGeneration.Elements[i];
+
                 // skip non-significant elements
                 if (parentElement.Weight < 0.01)
                     continue;
@@ -244,7 +246,7 @@ namespace Rt
                     nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
                         .ParentRayIndex = nextRays.Count,
                         .ParentWeight = parentElement.Weight,
-                        .Weight = FloatingType_t{1} - apparentDiffusionFactor,
+                        .Weight = (FloatingType_t{1} - apparentDiffusionFactor) * (FloatingType_t)0.3,
                         .ColorFilter = effectiveColor};
                     nextRays.Count++;
                     nextGeneration.Count++;
@@ -258,8 +260,8 @@ namespace Rt
                 // spawn random rays (1 is already spawned)
                 for (size_t j = 1; j < NUM_DIFFUSE_RAYS; j++)
                 {
-                    // Start from surface normal
-                    Line probingRay{nearest.Hitevent.ReflectedRay.Origin, nearest.Hitevent.SurfaceNormal};
+                    // Start from reflection
+                    Line probingRay {nearest.Hitevent.ReflectedRay.Origin, nearest.Hitevent.SurfaceNormal};
 
                     // rotate away from surface normal in the plane (surface normal) x (reflection)
                     probingRay.Direction = probingRay.Direction.RotateAboutPlane(nearest.Hitevent.SurfaceNormal, nearest.Hitevent.ReflectedRay.Direction, RandFloat() * Deg2Rad(60));
