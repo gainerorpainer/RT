@@ -15,7 +15,7 @@
 constexpr bool USE_PARALLEL = true;
 // skip tests
 constexpr bool DO_TESTS = false;
-constexpr unsigned int NUM_SMOOTHING_PASSES = 4;
+constexpr unsigned int NUM_SMOOTHING_PASSES = 10;
 #else
 constexpr bool USE_PARALLEL = false;
 constexpr bool DO_TESTS = true;
@@ -29,7 +29,7 @@ void Sidethread(std::shared_ptr<Bitmap::BitmapD> bitmap)
 {
     unsigned int const rngSeed = std::hash<std::thread::id>{}(std::this_thread::get_id());
     auto raytracer = Rt::Raytracer{rngSeed};
-    raytracer.RunBitmapParallel(*bitmap, AvailableWorkers / NUM_SMOOTHING_PASSES);
+    raytracer.RunBitmapParallel(*bitmap, (unsigned int)ceil((FloatingType_t)AvailableWorkers / (FloatingType_t)NUM_SMOOTHING_PASSES));
 }
 
 // exe entry point

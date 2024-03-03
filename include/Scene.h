@@ -15,7 +15,7 @@ namespace Scene
                   {-100, 100, 100},
                   {2, -1, -1}},
         new Sphere{"Skysphere",
-                   Materials::Material{}.MakeEmissive({50, 100, 255}),
+                   Materials::Material{}.MakeEmissive({100, 120, 255}),
                    {0, 0, 0},
                    1000},
         new CheckerboardPlane{"Floor",

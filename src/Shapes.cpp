@@ -134,7 +134,7 @@ namespace Shapes
 
     Materials::Material const &CheckerboardPlane::GetMaterial(HitEvent const &hitEvent) const
     {
-        return (abs(std::fmod(hitEvent.ReflectedRay.Origin.X, Width)) < (Width / (FloatingType_t)2)) && (abs(std::fmod(hitEvent.ReflectedRay.Origin.Y + Width / (FloatingType_t)2, 2)) < (Width / (FloatingType_t)2))
+        return ((int)std::floor(hitEvent.ReflectedRay.Origin.X / Width) + (int)std::floor(hitEvent.ReflectedRay.Origin.Y / Width) ) % 2
                    ? Materials.first
                    : Materials.second;
     }
