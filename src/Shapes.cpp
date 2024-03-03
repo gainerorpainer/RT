@@ -23,13 +23,13 @@ namespace Shapes
         return reflectionDirection;
     }
 
-    Shape::Shape(std::string const &label, Materials::Material const &material)
-        : Label{label}, Material{material}
+    Shape::Shape(std::string const &label)
+        : Label{label}
     {
     }
 
     Sphere::Sphere(std::string const &label, Materials::Material const &material, Vec3d center, FloatingType_t radius)
-        : Shape(label, material), Centerpoint{center}, Radius{radius}
+        : Shape(label), Material{material}, Centerpoint{center}, Radius{radius}
     {
     }
 
@@ -74,9 +74,19 @@ namespace Shapes
                         .ReflectedRay = Line{intersectionPoint, reflectionDirection}};
     }
 
+    Materials::Material const &Sphere::GetMaterial(HitEvent const &) const
+    {
+        return Material;
+    }
+
     Plane::Plane(std::string const &label, Materials::Material const &material, Vec3d pin, Vec3d planeNormal)
         // make ctor more accessible by always normalizing normal vector
-        : Shape(label, material), Pin{pin}, Normal{planeNormal.ToNormalized()}
+        : Shape(label), Material{material}, Pin{pin}, Normal{planeNormal.ToNormalized()}
+    {
+    }
+
+    Plane::Plane(std::string const &label, Vec3d pin, Vec3d planeNormal)
+        : Plane(label, Materials::Material{}, pin, planeNormal)
     {
     }
 
@@ -107,13 +117,25 @@ namespace Shapes
         Vec3d const reflectionDirection = Reflect(line.Direction, Normal);
         Vec3d const reflectionPoint = line.Origin + distance * line.Direction;
 
-        // if (Label == "Floor")
-        // {
-        //     DEBUG_ASSERT(reflectionPoint.GetNorm() <= 1000, "Reflection outside scene");
-        // }
-
         return HitEvent{.DistanceToSurface = distance,
                         .SurfaceNormal = Normal,
                         .ReflectedRay = Line{reflectionPoint, reflectionDirection}};
+    }
+
+    Materials::Material const &Plane::GetMaterial(HitEvent const &) const
+    {
+        return Material;
+    }
+
+    CheckerboardPlane::CheckerboardPlane(std::string const &label, std::pair<Materials::Material, Materials::Material> materials, FloatingType_t width, Vec3d pin, Vec3d normal)
+        : Plane(label, pin, normal), Materials{materials}, Width{width}
+    {
+    }
+
+    Materials::Material const &CheckerboardPlane::GetMaterial(HitEvent const &hitEvent) const
+    {
+        return (abs(std::fmod(hitEvent.ReflectedRay.Origin.X, Width)) < (Width / (FloatingType_t)2)) && (abs(std::fmod(hitEvent.ReflectedRay.Origin.Y + Width / (FloatingType_t)2, 2)) < (Width / (FloatingType_t)2))
+                   ? Materials.first
+                   : Materials.second;
     }
 }

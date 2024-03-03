@@ -204,7 +204,7 @@ namespace Rt
                     continue;
                 }
 
-                Materials::Material const &material = nearest.Shape->Material;
+                Materials::Material const &material = nearest.Shape->GetMaterial(nearest.Hitevent);
 
                 // check if light source was hit
                 if (material.IsLightsource)

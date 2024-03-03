@@ -24,7 +24,7 @@
         "-DNDEBUG",
         "-shared",
         "-Wl,--subsystem,windows",
-        "-O3",
+        "-O4",
         "-flto"
       ],
       "options": {

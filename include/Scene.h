@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 
 #include "Shapes.h"
 
@@ -17,16 +18,11 @@ namespace Scene
                    Materials::Material{}.MakeEmissive({50, 100, 255}),
                    {0, 0, 0},
                    1000},
-        new Plane{"Floor",
-                  Materials::Material{}.MakeAbsorbing({255, 255, 255}).MakeDiffuse(1),
-                  {0, 0, 0},
-                  {0, 0, 1}},
-        new Sphere{"Red Sphere",
-                   Materials::Material{}.MakeAbsorbing({230, 100, 100}).MakeDiffuse(0.5).MakeTotallyReflecting(Deg2Rad(80)),
-                   {3, -1, 1},
-                   1},
-        new Sphere{"Blue Sphere",
-                   Materials::Material{}.MakeAbsorbing({150, 150, 255}).MakeDiffuse(0.1).MakeTotallyReflecting(Deg2Rad(60)),
-                   {4, 1, 1.5},
-                   1.5}};
+        new CheckerboardPlane{"Floor",
+                              std::make_pair(Materials::Material{}.MakeAbsorbing({255, 255, 255}).MakeDiffuse(1), Materials::Material{}.MakeAbsorbing({0, 0, 0})),
+                              (FloatingType_t)1,
+                              {0, 0, 0},
+                              {0, 0, 1}},
+        new Sphere{"Red Sphere", Materials::Material{}.MakeAbsorbing({230, 100, 100}).MakeDiffuse(0.5).MakeTotallyReflecting(Deg2Rad(80)), {3, -1, 1}, 1},
+        new Sphere{"Blue Sphere", Materials::Material{}.MakeAbsorbing({150, 150, 255}).MakeDiffuse(0.1).MakeTotallyReflecting(Deg2Rad(60)), {4, 1, 1.5}, 1.5}};
 }
