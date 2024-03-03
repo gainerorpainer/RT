@@ -9,9 +9,9 @@ using namespace Primitives;
 
 namespace Transformation
 {
-    constexpr double PI = M_PI;
+    constexpr FloatingType_t PI = M_PI;
 
-    constexpr double Squared(double dbl)
+    constexpr FloatingType_t Squared(FloatingType_t dbl)
     {
         return dbl * dbl;
     }
@@ -21,17 +21,17 @@ namespace Transformation
     class Map2Sphere
     {
     private:
-        double const LongitudeStep;
-        double const LatitudeStep;
-        double const MapWidth;
-        double const MapHeight;
+        FloatingType_t const LongitudeStep;
+        FloatingType_t const LatitudeStep;
+        FloatingType_t const MapWidth;
+        FloatingType_t const MapHeight;
 
     public:
-        Map2Sphere(unsigned int mapWidth, unsigned int mapHeight, double fov)
+        Map2Sphere(unsigned int mapWidth, unsigned int mapHeight, FloatingType_t fov)
             : LongitudeStep{fov / mapWidth},
               LatitudeStep{fov / mapHeight},
-              MapWidth{(double)mapWidth},
-              MapHeight{(double)mapHeight}
+              MapWidth{(FloatingType_t)mapWidth},
+              MapHeight{(FloatingType_t)mapHeight}
         {
         }
 
@@ -41,8 +41,8 @@ namespace Transformation
         /// @return The resulting vector pointing to the sphere point with length 1
         Vec3d Transform(unsigned int x, unsigned int y) const
         {
-            double const longitude = (x - MapWidth / 2) * LongitudeStep;
-            double const latitude = (y - MapHeight / 2) * LongitudeStep;
+            FloatingType_t const longitude = (x - MapWidth / 2) * LongitudeStep;
+            FloatingType_t const latitude = (y - MapHeight / 2) * LongitudeStep;
 
             return Vec3d{cos(latitude) * cos(longitude), cos(latitude) * sin(longitude), sin(latitude)};
         }

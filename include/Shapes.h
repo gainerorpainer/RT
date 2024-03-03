@@ -12,7 +12,7 @@ namespace Shapes
 
     struct HitEvent
     {
-        double DistanceToSurface;
+        FloatingType_t DistanceToSurface;
         Vec3d SurfaceNormal;
         Line ReflectedRay;
     };
@@ -27,16 +27,14 @@ namespace Shapes
 
     protected:
         Shape(std::string const &label, Materials::Material const &material);
-
-        static Vec3d Reflect(Vec3d const &direction, Vec3d const &normal);
     };
 
     struct Sphere : public Shape
     {
         Vec3d Centerpoint;
-        double Radius;
+        FloatingType_t Radius;
 
-        Sphere(std::string const &label, Materials::Material const &material, Vec3d center, double radius);
+        Sphere(std::string const &label, Materials::Material const &material, Vec3d center, FloatingType_t radius);
 
         std::optional<HitEvent> CheckHit(Line const &line) const override;
     };

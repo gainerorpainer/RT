@@ -2,10 +2,17 @@
 
 #include <array>
 
+#include "Primitives.h"
+
 namespace Bitmap
 {
+#ifdef NDEBUG
     constexpr unsigned int BITMAP_WIDTH = 600;
     constexpr unsigned int BITMAP_HEIGHT = 450;
+#else
+    constexpr unsigned int BITMAP_WIDTH = 120;
+    constexpr unsigned int BITMAP_HEIGHT = 90;
+#endif
     constexpr unsigned int COLOR_COUNT = 3;
 
     constexpr unsigned int BUFFERSIZE = BITMAP_WIDTH * BITMAP_HEIGHT * COLOR_COUNT;
@@ -45,5 +52,5 @@ namespace Bitmap
     };
 
     using Bitmap = _bitmap_t<unsigned char>;
-    using BitmapD = _bitmap_t<double>;
+    using BitmapD = _bitmap_t<Primitives::FloatingType_t>;
 }

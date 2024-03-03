@@ -9,8 +9,8 @@
 
 namespace Rt
 {
-    constexpr unsigned int NUM_RAY_GENERATIONS = 3;
-    constexpr unsigned int NUM_DIFFUSE_RAYS = 6;
+    constexpr unsigned int NUM_RAY_GENERATIONS = 6;
+    constexpr unsigned int NUM_DIFFUSE_RAYS = 4;
 
     class Raytracer
     {
@@ -31,7 +31,7 @@ namespace Rt
             ColorD_t Emissions;
         };
 
-        double RandDouble();
+        FloatingType_t RandFloat();
         ColorD_t MarchRay(Line const &ray);
     };
 

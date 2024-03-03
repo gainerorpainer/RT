@@ -18,10 +18,10 @@ namespace Materials
         ColorD_t ColorFilter = {1, 1, 1};
 
         /// @brief How diffuse the material is, 0 is a perfect mirror, 1 is a fuzzy material
-        double DiffusionFactor = 0;
+        FloatingType_t DiffusionFactor = 0;
 
         /// @brief Indicent angle towards surface normal at which (higher than this value) total reflection occurs
-        double CriticalAngle = Deg2Rad(90);
+        FloatingType_t CriticalAngle = Deg2Rad(90);
 
         inline Material &MakeEmissive(Color_t emissionSpectrum)
         {
@@ -32,17 +32,17 @@ namespace Materials
 
         inline Material &MakeAbsorbing(Color_t visibleColor)
         {
-            ColorFilter = ColorD_t{(double)visibleColor[0] / 255.0, (double)visibleColor[1] / 255.0, (double)visibleColor[2] / 255.0};
+            ColorFilter = ColorD_t{(FloatingType_t)visibleColor[0] / FloatingType_t{255}, (FloatingType_t)visibleColor[1] / FloatingType_t{255}, (FloatingType_t)visibleColor[2] / FloatingType_t{255}};
             return *this;
         }
 
-        inline Material &MakeDiffuse(double diffusionFactor)
+        inline Material &MakeDiffuse(FloatingType_t diffusionFactor)
         {
             DiffusionFactor = diffusionFactor;
             return *this;
         }
 
-        inline Material &MakeTotallyReflecting(double totalReflectionAngle)
+        inline Material &MakeTotallyReflecting(FloatingType_t totalReflectionAngle)
         {
             CriticalAngle = totalReflectionAngle;
             return *this;
