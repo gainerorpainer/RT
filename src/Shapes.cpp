@@ -4,9 +4,9 @@
 
 namespace Shapes
 {
-    constexpr double OFFSET_DELTA = 1e-3;
+    constexpr FloatingType_t OFFSET_DELTA = 1e-3;
 
-    double signOf(double val)
+    FloatingType_t signOf(FloatingType_t val)
     {
         if (val > 0)
             return 1.0;
@@ -28,7 +28,7 @@ namespace Shapes
     {
     }
 
-    Sphere::Sphere(std::string const &label, Materials::Material const &material, Vec3d center, double radius)
+    Sphere::Sphere(std::string const &label, Materials::Material const &material, Vec3d center, FloatingType_t radius)
         : Shape(label, material), Centerpoint{center}, Radius{radius}
     {
     }
@@ -40,22 +40,22 @@ namespace Shapes
         // https://gamedev.stackexchange.com/a/96487
 
         Vec3d const directionBetween = line.Origin - Centerpoint;
-        double const b = directionBetween * line.Direction;
-        double const c = directionBetween * directionBetween - Radius * Radius;
+        FloatingType_t const b = directionBetween * line.Direction;
+        FloatingType_t const c = directionBetween * directionBetween - Radius * Radius;
 
         // ray is outside of sphere and pointing away from sphere
         if (c > 0 && b > 0)
             return std::nullopt;
 
         // no intersection
-        double const discriminant = b * b - c;
+        FloatingType_t const discriminant = b * b - c;
         if (discriminant < 0)
             return std::nullopt;
 
         // calc parameter t on r = line.Origin + line.Direction * t, taking the solution that is within the line direction
         // https://www.shadertoy.com/view/4d2XWV
-        double distance = -b - signOf(c) * sqrt(discriminant);
-        // double const distance = abs(-b - sqrt(discriminant));
+        FloatingType_t distance = -b - signOf(c) * sqrt(discriminant);
+        // FloatingType_t const distance = abs(-b - sqrt(discriminant));
 
         // reflect such that it does not intersect with itself
         DEBUG_ASSERT(distance > 0, "Distance must be in the ray direction");
@@ -84,7 +84,7 @@ namespace Shapes
     {
         DEBUG_ASSERT(AlmostSame(line.Direction.GetNorm(), 1.0), "Line argument not normalized");
 
-        double const denominator = line.Direction * Normal;
+        FloatingType_t const denominator = line.Direction * Normal;
         // parallel?
         if (denominator == 0)
         {
@@ -94,8 +94,8 @@ namespace Shapes
         }
 
         // check numerator / denominator = distance > 0
-        double const numerator = (Pin - line.Origin) * Normal;
-        double distance = numerator / denominator;
+        FloatingType_t const numerator = (Pin - line.Origin) * Normal;
+        FloatingType_t distance = numerator / denominator;
         if (distance < 0)
             return std::nullopt;
 

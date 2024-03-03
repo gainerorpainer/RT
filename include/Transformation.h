@@ -11,7 +11,7 @@ namespace Transformation
 {
     constexpr FloatingType_t PI = M_PI;
 
-    constexpr FloatingType_t Squared(double dbl)
+    constexpr FloatingType_t Squared(FloatingType_t dbl)
     {
         return dbl * dbl;
     }

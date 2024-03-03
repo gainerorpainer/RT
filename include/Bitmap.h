@@ -7,8 +7,8 @@
 namespace Bitmap
 {
 #ifdef NDEBUG
-    constexpr unsigned int BITMAP_WIDTH = 400;
-    constexpr unsigned int BITMAP_HEIGHT = 300;
+    constexpr unsigned int BITMAP_WIDTH = 600;
+    constexpr unsigned int BITMAP_HEIGHT = 450;
 #else
     constexpr unsigned int BITMAP_WIDTH = 120;
     constexpr unsigned int BITMAP_HEIGHT = 90;

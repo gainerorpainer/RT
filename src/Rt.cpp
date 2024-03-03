@@ -153,6 +153,7 @@ namespace Rt
         std::array<generation_t, 2> generationBuffer{};
         std::array<parentRays_t, 2> generationRays{};
         Vec3d emissionAccumulator{0, 0, 0};
+        FloatingType_t weightSum;
 
         // asserts
         {
@@ -184,11 +185,10 @@ namespace Rt
             // "clear" next generation
             nextGeneration.Count = 0;
             nextRays.Count = 0;
+            weightSum = 0;
 
-            for (size_t i = 0; i < lastGeneration.Count; i++)
+            for (generationElement_t const &parentElement : lastGeneration.Elements)
             {
-                generationElement_t const &parentElement = lastGeneration.Elements[i];
-
                 // skip non-significant elements
                 if (parentElement.Weight < 0.01)
                     continue;
@@ -212,19 +212,22 @@ namespace Rt
                 }
 
                 // todo, add some light in the color of the material
-                //emissionAccumulator = emissionAccumulator + (255 * material.ColorFilter);
+                // emissionAccumulator = emissionAccumulator + (255 * material.ColorFilter);
 
                 // do not generate more rays on last iteration as they will not be checked anymore
                 if (generationIndex == NUM_RAY_GENERATIONS)
                     continue;
 
                 Vec3d const effectiveColor = parentElement.ColorFilter.MultiplyElementwise(material.ColorFilter);
+
+                // too dark
+                if (effectiveColor.GetNorm() < 0.01)
+                    continue;
+
                 FloatingType_t angleOfIncidence = abs(nearest.Hitevent.ReflectedRay.Direction.AngleTo(nearest.Hitevent.SurfaceNormal));
-
                 if (isnan(angleOfIncidence))
+                    // bad bahaviour when angle gets small
                     angleOfIncidence = 0;
-
-                // total reflection: Material then acts like a perfect mirror
 
                 // lerp between diffusion factor and 0 between the range critical angle .. 90°
                 FloatingType_t const apparentDiffusionFactor = angleOfIncidence < material.CriticalAngle ? material.DiffusionFactor
@@ -233,18 +236,23 @@ namespace Rt
                 DEBUG_ASSERT(apparentDiffusionFactor >= 0 && apparentDiffusionFactor <= material.DiffusionFactor, "Bad diffusion fadeout");
 
                 // perfect mirror will only spawn single ray
-                nextRays.Rays[nextRays.Count] = nearest.Hitevent.ReflectedRay;
-                nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
-                    .ParentRayIndex = nextRays.Count,
-                    .ParentWeight = parentElement.Weight,
-                    .Weight = (FloatingType_t{1} - apparentDiffusionFactor),
-                    .ColorFilter = effectiveColor};
-                nextRays.Count++;
-                nextGeneration.Count++;
+                FloatingType_t const weight = FloatingType_t{1} - apparentDiffusionFactor;
+                // too little contribution
+                if (weight > 0.01)
+                {
+                    nextRays.Rays[nextRays.Count] = nearest.Hitevent.ReflectedRay;
+                    nextGeneration.Elements[nextGeneration.Count] = generationElement_t{
+                        .ParentRayIndex = nextRays.Count,
+                        .ParentWeight = parentElement.Weight,
+                        .Weight = FloatingType_t{1} - apparentDiffusionFactor,
+                        .ColorFilter = effectiveColor};
+                    nextRays.Count++;
+                    nextGeneration.Count++;
+                    weightSum += weight;
+                }
 
-                bool const isTotallyReflected = angleOfIncidence > material.CriticalAngle;
-
-                if (apparentDiffusionFactor < 0.01 || isTotallyReflected)
+                // mirror material or total reflection
+                if ((apparentDiffusionFactor < 0.01) || (angleOfIncidence > material.CriticalAngle))
                     continue;
 
                 // spawn random rays (1 is already spawned)
@@ -276,6 +284,7 @@ namespace Rt
                         .ColorFilter = effectiveColor};
                     nextRays.Count++;
                     nextGeneration.Count++;
+                    weightSum += weight;
                 };
             }
 
@@ -290,9 +299,6 @@ namespace Rt
             }
             else
             {
-                FloatingType_t const weightSum = std::accumulate(nextGeneration.Elements.begin(), nextGeneration.Elements.begin() + nextGeneration.Count,
-                                                                 0.0, [](FloatingType_t const &last, generationElement_t const &next)
-                                                                 { return last + next.Weight; });
                 for (size_t i = 0; i < nextGeneration.Count; i++)
                 {
                     FloatingType_t const localWeight = nextGeneration.Elements[i].Weight / weightSum;

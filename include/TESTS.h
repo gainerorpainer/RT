@@ -19,7 +19,7 @@ namespace Tests
         DEBUG_ASSERT(hitEvent.has_value(), "Line should intersect)");
         DEBUG_ASSERT(hitEvent->DistanceToSurface < 1000, "Intersection should be closest");
 
-        double const isParallel = abs((hitEvent->ReflectedRay.Origin - sphere.Centerpoint) * hitEvent->ReflectedRay.Direction);
+        FloatingType_t const isParallel = abs((hitEvent->ReflectedRay.Origin - sphere.Centerpoint) * hitEvent->ReflectedRay.Direction);
         DEBUG_ASSERT(isParallel > 0.9, "Reflected ray should point inwards!");
     }
 

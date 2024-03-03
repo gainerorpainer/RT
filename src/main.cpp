@@ -75,7 +75,7 @@ int main()
                 {
                     for (size_t i = 0; i < 3; i++)
                     {
-                        resultBuffer->at(x, y, i) += piece->at(x, y, i) / (double)NUM_SMOOTHING_PASSES;
+                        resultBuffer->at(x, y, i) += piece->at(x, y, i) / (FloatingType_t)NUM_SMOOTHING_PASSES;
                     }
                 }
             }
